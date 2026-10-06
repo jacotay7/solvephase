@@ -45,7 +45,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e ".[test,plot]"
-      - run: python -m pytest -q --cov=solvephase --cov-report=term-missing --cov-report=xml
+      - run: python -m pytest -q --cov=solvephase --cov-report=term-missing --cov-report=xml --cov-fail-under=85
       - name: Upload coverage report
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         uses: actions/upload-artifact@v4

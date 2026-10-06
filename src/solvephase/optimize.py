@@ -290,6 +290,8 @@ def levenberg_marquardt(
     damping:
         Initial damping relative to the largest diagonal of ``H``.
 
+    Notes
+    -----
     The step solves ``(H + mu diag(H)) dx = -g`` (Marquardt scaling) on the
     host in double precision; ``mu`` follows Nielsen's update.
     """

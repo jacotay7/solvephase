@@ -1,7 +1,8 @@
 name: Docs
 
 # Build the mkdocs site and publish it to GitHub Pages on every push to main.
-# Enable Pages once at Settings -> Pages -> Source: GitHub Actions.
+# Enable Pages once at Settings -> Pages -> Source: GitHub Actions. While the
+# repository is private (Pages unavailable) it is skipped; CI still builds the docs.
 
 on:
   push:
@@ -19,6 +20,7 @@ concurrency:
 
 jobs:
   build:
+    if: ${{ !github.event.repository.private }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

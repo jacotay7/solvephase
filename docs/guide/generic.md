@@ -261,18 +261,29 @@ run with a "diverged" message: reduce `step`.
 Complex $x \in \mathbb{C}^n$ needs $m \ge 4n - 4$ generic measurements for the
 intensity map to be injective (Conca et al. 2015); the theory for these
 algorithms needs $m = O(n)$ (TWF, TAF, RAF) or $O(n\log n)$ (WF). Measured
-success rates on the Gaussian model ($n = 64$, 10 problems, relative error
-below $10^{-5}$, default settings):
+success rates on the Gaussian model (10 problems per cell, relative error
+below $10^{-5}$ within 3000 iterations, default settings):
 
-| $m/n$ | WF | TWF | TAF | RAF | L-BFGS |
+| $n$ | $m/n$ | WF | TWF | TAF | RAF | L-BFGS (amplitude) | L-BFGS (intensity) |
+|---|---|---|---|---|---|---|---|
+| 64 | 3 | 0 | 6 | 6 | 8 | 10 | 10 |
+| 128 | 3 | 0 | 6 | 5 | 7 | 10 | 9 |
+| 64, 128 | 4.5, 6, 8 | 10 | 10 | 10 | 10 | 10 | 10 |
+
+For coded diffraction, $L = 6$ to 8 octanary masks is comfortable for every
+method; TAF, RAF and L-BFGS still succeed with $L = 4$. Fourier magnitudes
+alone (`OversampledFourierOperator`, 16 × 16 image, 2× oversampling) defeat
+all five methods (0 of 5 problems).
+
+Iterations to reach relative error $10^{-6}$ (double precision), and wall
+time on a Quadro P620 in single precision to $10^{-5}$ (including the
+initialization), with each method's default initialization:
+
+| problem | WF | TWF | TAF | RAF | L-BFGS |
 |---|---|---|---|---|---|
-| 3 | 4/10 | 6/10 | 8/10 | 8/10 | 9/10 (10/10 intensity loss) |
-| 4.5 | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 |
-| 6 and 8 | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 |
-
-(WF row measured with $\mu_{\max} = 0.2$ at $n = 64$, where it is still
-stable.) For coded diffraction, $L = 6$ to 8 octanary masks is comfortable
-for every method; TAF, RAF and L-BFGS still succeed with $L = 4$.
+| Gaussian, $n = 256$, $m = 8n$: iterations | 700 | 135 | 80 | 125 | 25 |
+| CDP $256 \times 256$, $L = 8$: iterations | 690 | 135 | 85 | 125 | 25 |
+| CDP $256 \times 256$, $L = 8$: GPU time (s) | 1.39 | 0.52 | 0.31 | 0.41 | 0.41 |
 
 Which to pick:
 

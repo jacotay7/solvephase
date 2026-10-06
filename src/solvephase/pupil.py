@@ -358,6 +358,8 @@ class Pupil:
         orientation:
             Rotation of the segment lattice in degrees.
 
+        Notes
+        -----
         The returned pupil's :attr:`~Pupil.segments` labels the segments
         ``1..S``, ordered by ring and then angle; :attr:`~Pupil.diameter` is the
         circumscribed diameter.

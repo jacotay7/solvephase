@@ -271,6 +271,8 @@ class Basis:
             pixels), which improves solver conditioning. Coefficients then
             belong to the orthonormalized modes, not the textbook polynomials.
 
+        Notes
+        -----
         Mode labels are ``Z<j>`` in the chosen ordering, and each mode has unit
         RMS over the continuous (annular) disk, so a coefficient is RMS OPD in
         metres.

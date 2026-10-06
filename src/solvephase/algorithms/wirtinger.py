@@ -137,6 +137,8 @@ class GenericResult:
         Algorithm used.
     init:
         Initialization used (``"given"`` for a user-supplied start).
+    options:
+        Method parameters used (``step`` and the method's options).
     """
 
     x: Any

@@ -270,7 +270,7 @@ def main(argv: list[str] | None = None) -> int:
             run_solvephase_hio(mags, support, iters // 2, device, 16),
         )
     if args.output:
-        with open(args.output, "w") as handle:
+        with open(args.output, "w", encoding="utf-8") as handle:
             json.dump({"environment": _env(), "rows": rows}, handle, indent=2)
     return 0
 

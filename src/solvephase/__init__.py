@@ -7,7 +7,7 @@ The most common entry points:
 * :class:`FocalPlaneProblem` + :func:`solve` - full control of the
   nonlinear focal-plane solver;
 * :func:`phase_diversity`, :func:`lift`, :class:`FastAndFurious`,
-  :func:`cdi`, :func:`tie`, :func:`gerchberg_saxton` - the algorithm
+  :func:`cdi`, :func:`wirtinger`, :func:`tie`, :func:`gerchberg_saxton` - the algorithm
   families (see :mod:`solvephase.algorithms`).
 """
 
@@ -25,12 +25,19 @@ from .algorithms.gerchberg_saxton import gerchberg_saxton
 from .algorithms.lift import LIFT, lift, lift_crlb
 from .algorithms.phase_diversity import PhaseDiversityProblem, phase_diversity
 from .algorithms.tie import TIEResult, simulate_defocus_stack, tie
+from .algorithms.wirtinger import GenericResult, relative_error, wirtinger
 from .api import retrieve
 from .backend import Backend, backend_of, get_backend, gpu_available, to_numpy
 from .basis import Basis
 from .focal import FocalPlaneModel, zernike_diversity
 from .losses import AmplitudeLoss, GaussianLoss, Loss, PoissonLoss
 from .metrics import remove_modes, rms, strehl_from_rms, wavefront_error
+from .operators import (
+    CodedDiffractionOperator,
+    LinearOperator,
+    MatrixOperator,
+    OversampledFourierOperator,
+)
 from .propagation import (
     AngularSpectrumPropagator,
     FFTPropagator,
@@ -51,14 +58,19 @@ __all__ = [
     "Basis",
     "CDIResult",
     "ClosedLoopResult",
+    "CodedDiffractionOperator",
     "FFTPropagator",
     "FastAndFurious",
     "FocalPlaneModel",
     "FocalPlaneProblem",
     "FocalPlanePropagator",
     "GaussianLoss",
+    "GenericResult",
+    "LinearOperator",
     "Loss",
     "MFTPropagator",
+    "MatrixOperator",
+    "OversampledFourierOperator",
     "PhaseDiversityProblem",
     "PoissonLoss",
     "Pupil",
@@ -78,6 +90,7 @@ __all__ = [
     "noise_weights",
     "phase_diversity",
     "random_aberration",
+    "relative_error",
     "remove_modes",
     "retrieve",
     "rms",
@@ -91,6 +104,7 @@ __all__ = [
     "to_numpy",
     "unwrap_phase",
     "wavefront_error",
+    "wirtinger",
     "wrap",
     "zernike_diversity",
 ]

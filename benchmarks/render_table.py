@@ -135,10 +135,10 @@ def main() -> None:
     parser.add_argument("--compare", default=None)
     args = parser.parse_args()
     if args.suite:
-        with open(args.suite) as handle:
+        with open(args.suite, encoding="utf-8") as handle:
             print(render_suite(json.load(handle)))
     if args.compare:
-        with open(args.compare) as handle:
+        with open(args.compare, encoding="utf-8") as handle:
             print(render_compare(json.load(handle)))
 
 

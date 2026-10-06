@@ -13,7 +13,7 @@ import pytest
 
 DOCS = Path(__file__).resolve().parents[1] / "docs"
 BLOCK = re.compile(r"^```python\n(.*?)^```", re.S | re.M)
-PAGES = sorted(p for p in DOCS.rglob("*.md") if BLOCK.search(p.read_text()))
+PAGES = sorted(p for p in DOCS.rglob("*.md") if BLOCK.search(p.read_text(encoding="utf-8")))
 
 
 @pytest.mark.slow
@@ -23,7 +23,7 @@ def test_docs_page_runs(page: Path, tmp_path, monkeypatch) -> None:
     import matplotlib
 
     matplotlib.use("Agg")
-    text = page.read_text()
+    text = page.read_text(encoding="utf-8")
     if "solvephase.interop" in text:
         pytest.importorskip("pyturb")
         pytest.importorskip("getframes")

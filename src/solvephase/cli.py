@@ -90,7 +90,7 @@ def _retrieve(args: argparse.Namespace) -> int:
             "coefficients_m": None if result.coefficients is None else result.coefficients.tolist(),
             "labels": None if result.basis is None else result.basis.labels,
         }
-        Path(args.json).write_text(json.dumps(payload, indent=2))
+        Path(args.json).write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return 0
 
 

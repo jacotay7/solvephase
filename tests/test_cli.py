@@ -48,14 +48,14 @@ def test_retrieve_command_round_trip(tmp_path, capsys) -> None:
     )
     assert code == 0
     assert "saved" in capsys.readouterr().out
-    summary = json.loads((tmp_path / "summary.json").read_text())
+    summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
     assert summary["method"] == "lm" and len(summary["coefficients_m"]) == 12
     opd = np.load(tmp_path / "result.npz")["opd"]
     assert sp.wavefront_error(opd, truth, pupil, remove="tiptilt") < 2e-9
 
 
 def test_retrieve_rejects_unknown_formats(tmp_path) -> None:
-    (tmp_path / "images.txt").write_text("1 2 3")
+    (tmp_path / "images.txt").write_text("1 2 3", encoding="utf-8")
     with pytest.raises(SystemExit):
         main(["retrieve", str(tmp_path / "images.txt"), "--wavelength", "1e-6", "--sampling", "2"])
 

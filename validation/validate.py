@@ -299,7 +299,7 @@ def main(argv: list[str] | None = None) -> int:
         "passed": all(c["passed"] for c in checks),
         "checks": checks,
     }
-    (out_dir / "validation.json").write_text(json.dumps(report, indent=2))
+    (out_dir / "validation.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     save_figure(out_dir / "validation.png", figures)
     n_fail = sum(not c["passed"] for c in checks)
     print(

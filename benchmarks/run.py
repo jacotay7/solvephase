@@ -255,7 +255,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"# {name} on {device}: {time.perf_counter() - t0:.1f} s", file=sys.stderr)
     artifact = {"environment": environment(), "quick": args.quick, "results": results}
     if args.output:
-        with open(args.output, "w") as handle:
+        with open(args.output, "w", encoding="utf-8") as handle:
             json.dump(artifact, handle, indent=2)
         print(f"wrote {args.output}", file=sys.stderr)
     return 0

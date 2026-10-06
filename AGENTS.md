@@ -187,6 +187,21 @@ note the GPU and CuPy version when you report GPU results.
   smaller one).
 - Fast & Furious needs an integer FFT size and a centro-symmetric pupil, and
   its first step must apply even diversity (`first_even=True`).
+- OpenBLAS level-2/3 calls (`matmul`, gemv) on small operands stall like
+  level-1 under load (~3 ms vs 80 us for `np.einsum`); `MatrixOperator`
+  uses einsum on the CPU for small products.
+- Octanary coded-diffraction spectral initializations need `diag(A^H A)`
+  whitening beyond ~1e4 pixels, otherwise the leading eigenvector locks onto
+  single pixels. Wirtinger flow with the paper's `mu_max = 0.2` diverges for
+  n >= 128 (default 0.1). Stop slowly contracting first-order methods on
+  residual stagnation, not on iterate change.
+- Fourier magnitudes alone defeat the Wirtinger family (shift and twin
+  ambiguities); that model belongs to the CDI projection solvers.
+- Always pass `encoding="utf-8"` to `read_text`/`write_text`/`open` for text:
+  Windows defaults to cp1252 and the docs contain non-ASCII characters.
+- Chaotic projection algorithms (DM, RAAR, HIO) land in platform-dependent
+  places after a fixed number of iterations (FFT rounding differs across
+  OS/BLAS builds); assert robust reductions, not tight ratios.
 - Tests import shared helpers as `from conftest import devices` (`tests/`
   is not a package).
 - GPU timings on a shared device (or CPU timings under load) vary 2-5x;

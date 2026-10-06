@@ -86,15 +86,20 @@ def test_registration_tilt_is_recovered(setup) -> None:
 
 
 def test_kl_prior_regularizes_unseen_modes() -> None:
+    # A flat wavefront seen with few photons: the maximum-likelihood fit chases
+    # noise, while a tight turbulence prior (large r0) shrinks the estimate.
     pupil = Pupil.circular(32, 1.0)
-    kl = Basis.kl(pupil, 30, r0=0.3, r0_wavelength=LAM)
+    kl = Basis.kl(pupil, 30, r0=2.0, r0_wavelength=LAM)
     model = FocalPlaneModel(pupil, LAM, 32, sampling=2.0)
-    images = sp.simulate_images(model, None, photons=1e3, seed=1)
-    free = solve(FocalPlaneProblem(model, images, basis=kl, loss="poisson"), method="lm")
-    prior = solve(
-        FocalPlaneProblem(model, images, basis=kl, loss="poisson", prior=True), method="lm"
-    )
-    assert sp.rms(prior.opd, pupil) < sp.rms(free.opd, pupil)
+    ratios = []
+    for seed in range(3):
+        images = sp.simulate_images(model, None, photons=1e3, seed=seed)
+        free = solve(FocalPlaneProblem(model, images, basis=kl, loss="poisson"), method="lm")
+        prior = solve(
+            FocalPlaneProblem(model, images, basis=kl, loss="poisson", prior=True), method="lm"
+        )
+        ratios.append(sp.rms(prior.opd, pupil) / sp.rms(free.opd, pupil))
+    assert max(ratios) < 0.8, ratios
 
 
 def test_start_from_result_and_validation(setup) -> None:

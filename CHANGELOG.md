@@ -102,6 +102,24 @@ First release.
     gradients up to 10x faster.
   - Scalar products avoid threaded level-1 BLAS.
 
+### Comparison
+
+- `benchmarks/methods.py` runs every method on one reference problem. All
+  focal-plane methods see the same wavefront. It reports:
+  - the data each method needs;
+  - accuracy at a standard SNR;
+  - warm CPU and GPU time;
+  - capture range.
+
+  Its output feeds the comparison tables on the "Choosing an algorithm" docs
+  page, which also has a decision flowchart.
+- The README showcase races every focal-plane method on one clock, with a
+  live error-versus-time chart, plus a gallery of CDI, coded diffraction and
+  TIE.
+- The Keck preset now follows the documented geometry: 10.95 m across the
+  corners, pointy-top segments, six 26 mm support arms, and a 2.57 m central
+  obscuration.
+
 ### Quality
 
 - More than 280 tests: adjoints, gradients, recovery accuracy, Cramér-Rao

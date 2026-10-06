@@ -48,7 +48,8 @@ src/solvephase/
   algorithms/       one module per algorithm family (gerchberg_saxton, cdi, ...)
   api.py            retrieve(): the one-call high-level entry point
 tests/              pytest; mirrors the module names
-benchmarks/         speed suite (CPU/GPU), JSON artifacts, regression check
+benchmarks/         speed suite (run.py), head-to-head baselines (compare.py), method
+                    comparison feeding docs/choosing.md (methods.py), JSON artifacts
 validation/         physics/statistics evidence (Cramer-Rao, independent references)
 docs/               mkdocs-material site
 examples/           headless, deterministic scripts

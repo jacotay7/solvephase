@@ -409,24 +409,33 @@ class Pupil:
     # ----------------------------------------------------- telescope presets
     @classmethod
     def keck(cls, n: int = 256, *, supersample: int = 4) -> Pupil:
-        """Keck-like primary: 36 hexagonal segments of 1.8 m (flat-to-flat).
+        """Keck-like primary: 36 pointy-top hexagonal segments, 10.95 m across corners.
 
-        Approximate: 3 mm gaps, a 2.65 m central obscuration and three 25 mm
-        spiders. Good for algorithm development, not instrument modelling.
+        The segment pitch is 10.95 / 7 m (1.8 m corner to corner) with 3 mm
+        gaps; six 26 mm support arms at 30 + 60 k degrees and a 2.57 m circular
+        central obscuration. :attr:`diameter` is the conventional 10.95 m (the
+        circumscribed circle is 11.19 m). This follows the geometry of makewfs' Keck HAKA
+        example, without its fitted hexagonal secondary shadow and offset.
+        Good for algorithm development, not instrument modelling.
         """
-        return cls.segmented_hexagonal(
+        gap, size = 0.003, 10.95 / 7.0
+        circ = size / math.sqrt(3.0)
+        circumscribed = 2.0 * max(math.hypot(x, y) + circ for _, x, y in _hex_lattice(3, size, 0.0))
+        pupil = cls.segmented_hexagonal(
             n,
             rings=3,
-            segment_size=1.8,
-            gap=0.003,
-            obscuration=2.65 / 10.95,
-            spiders=3,
-            spider_width=0.025,
-            spider_angle=90.0,
-            orientation=90.0,
+            segment_size=size - gap,
+            gap=gap,
+            obscuration=2.5746 / circumscribed,
+            spiders=6,
+            spider_width=0.026,
+            spider_angle=30.0,
+            orientation=0.0,
             supersample=supersample,
             name="keck",
         )
+        # Report the conventional 10.95 m diameter (it sets lambda/D).
+        return replace(pupil, diameter=10.95, obscuration=2.5746 / 10.95)
 
     @classmethod
     def jwst(cls, n: int = 256, *, supersample: int = 4) -> Pupil:

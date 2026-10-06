@@ -33,7 +33,7 @@ nav:
   - Quickstart: quickstart.md
   - Concepts: concepts.md
   - Conventions and units: conventions.md
-  - Choosing an algorithm: choosing.md
+  - Choosing an algorithm (comparison): choosing.md
   - Guides:
       - Focal-plane retrieval: guide/focal-plane.md
       - Pupils and bases: guide/pupils-and-bases.md
@@ -77,7 +77,11 @@ markdown_extensions:
       permalink: true
   - pymdownx.details
   - pymdownx.highlight
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.arithmatex:

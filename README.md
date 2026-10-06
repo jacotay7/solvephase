@@ -11,7 +11,7 @@
 coherent imaging.**
 
 <p align="center">
-  <img src="examples/solvephase_showcase.webp" width="640" alt="Retrieving a VLT-like NCPA wavefront from two noisy focal-plane frames: data, model, retrieved wavefront and error as the solver converges.">
+  <img src="examples/solvephase_showcase.webp" width="900" alt="A race between every solvephase focal-plane method on the same aberrated VLT-like wavefront (Gerchberg-Saxton/Misell, modal and zonal maximum likelihood, retrieve(), extended-scene phase diversity, LIFT and Fast &amp; Furious) on one clock, with a live error-versus-time chart and a gallery of CDI, coded-diffraction and TIE reconstructions.">
 </p>
 
 `solvephase` recovers phase from intensity. It covers focal-plane wavefront
@@ -65,7 +65,9 @@ sp.cdi(magnitudes, support, schedule="hio:500,er:100", starts=16, device="gpu")
 sp.tie(stack, [-dz, 0, dz], pitch=pitch, wavelength=wavelength)
 ```
 
-See **[Choosing an algorithm](https://jacotay7.github.io/solvephase/choosing/)**.
+See **[Choosing an algorithm](https://jacotay7.github.io/solvephase/choosing/)**
+for a side-by-side comparison: images needed, requirements, measured speed,
+accuracy and capture range of every method.
 
 ## Highlights
 

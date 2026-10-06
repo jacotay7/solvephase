@@ -38,6 +38,7 @@ dependencies = [
     "numpy>=1.23",
     "scipy>=1.10",
     "aobasis>=2.0",
+    "threadpoolctl>=3.0",
 ]
 
 [project.optional-dependencies]
@@ -135,6 +136,7 @@ module = [
     "getframes.*",
     "hcipy.*",
     "astropy.*",
+    "threadpoolctl.*",
 ]
 ignore_missing_imports = true
 

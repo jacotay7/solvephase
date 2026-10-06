@@ -16,6 +16,7 @@ explicit host boundary.
 
 from __future__ import annotations
 
+import contextlib
 import functools
 import os
 from dataclasses import dataclass
@@ -69,6 +70,30 @@ def _cpu_workers(size: int = 1 << 30) -> int:
     if env:
         return max(1, int(env))
     return max(1, min(os.cpu_count() or 1, size >> 14))
+
+
+@functools.lru_cache(maxsize=1)
+def _threadpool_controller() -> Any:
+    try:
+        from threadpoolctl import ThreadpoolController
+    except ImportError:  # pragma: no cover - threadpoolctl is a dependency
+        return None
+    return ThreadpoolController()
+
+
+def _blas_threads(work: float) -> int:
+    """BLAS threads for a matrix product of about ``work`` multiply-adds.
+
+    OpenBLAS defaults to one thread per logical CPU, which for the
+    mid-sized complex products of the matrix Fourier transform is 2-4x slower
+    than a few threads (hyper-threads and synchronization cost more than they
+    give). ``SOLVEPHASE_BLAS_THREADS`` fixes the count.
+    """
+    env = os.environ.get("SOLVEPHASE_BLAS_THREADS")
+    if env:
+        return max(1, int(env))
+    cores = max(1, (os.cpu_count() or 2) // 2)
+    return max(1, min(cores, 4 if work <= 2**28 else 8))
 
 
 @dataclass(frozen=True)
@@ -190,6 +215,16 @@ class Backend:
         from scipy import fft
 
         return fft.irfft2(array, s=shape, axes=axes, workers=_cpu_workers(array.size))
+
+    def blas_limit(self, work: float) -> contextlib.AbstractContextManager[Any]:
+        """Context limiting CPU BLAS threads for products of ``work`` multiply-adds.
+
+        A no-op on the GPU. Entering and leaving costs a few microseconds.
+        """
+        controller = None if self.is_gpu else _threadpool_controller()
+        if controller is None:
+            return contextlib.nullcontext()
+        return controller.limit(limits=_blas_threads(work), user_api="blas")
 
     # -------------------------------------------------------------- reductions
     def dot(self, a: Any, b: Any) -> float:

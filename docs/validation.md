@@ -16,17 +16,15 @@ python validation/validate.py --quick --output /tmp/validation    # CI
 
 ## Checks and results
 
-<!-- VALIDATION TABLE -->
-
 | Check | Result | Threshold |
 |---|---|---|
-| Images vs HCIPy's Fraunhofer propagator (FFT q=2, q=3; MFT q=1.37; 3-wavelength broadband), max normalized difference | 4e-16 – 2e-15 | 1e-10 |
+| Images vs HCIPy's Fraunhofer propagator (FFT q=2, q=3; MFT q=1.37; 3-wavelength broadband), max normalized difference | 4e-16 – 4e-15 | 1e-10 |
 | Airy peak normalization vs $A\theta^2/\lambda^2$ (relative) | 2.2e-5 | 2e-3 |
 | Airy first dark ring vs $1.22\,\lambda/D$ | 0.03 λ/D (pixel 1/8 λ/D) | 1/8 λ/D |
 | Poisson ML modal estimator: Monte-Carlo variance / Cramér-Rao bound (200 noise draws, 12 modes) | 1.10 | 0.71 – 1.40 |
 | Poisson ML estimator bias, max over modes | 0.09 σ_CRB | 0.85 σ_CRB |
-| `retrieve()` capture with two images, success rate up to 0.3 waves RMS | 100 % | 100 % |
-| Single vs double precision solution difference | 7e-6 nm | 0.05 nm |
+| `retrieve()` capture with two images (±0.3 λ RMS defocus), success rate up to 0.3 waves RMS | 100 % (100 % to 0.4; 80 % at 0.5–0.6; 70 % at 0.8) | 100 % |
+| Single vs double precision solution difference | 8e-6 nm | 0.05 nm |
 | Phase diversity on an extended scene: relative wavefront error | 3.1 % | 10 % |
 | LIFT variance / Cramér-Rao bound (150 draws) | 1.01 | 0.68 – 1.46 |
 | Fast & Furious closed loop: residual after 20 steps / initial | 0.08 | 0.2 |

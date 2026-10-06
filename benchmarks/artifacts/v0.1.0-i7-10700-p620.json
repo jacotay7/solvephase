@@ -1,0 +1,801 @@
+{
+  "environment": {
+    "solvephase": "0.1.0",
+    "python": "3.13.13",
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "processor": "x86_64",
+    "cpu_count": 16,
+    "numpy": "2.2.6",
+    "timestamp": "2026-10-06T22:29:11+00:00",
+    "scipy": "1.17.1",
+    "cpu": "Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz",
+    "gpu": "Quadro P620",
+    "cupy": "14.1.1",
+    "cuda_runtime": 12090
+  },
+  "quick": false,
+  "results": [
+    {
+      "size": 256,
+      "algorithm": "hio",
+      "starts": 1,
+      "iterations_per_s": 520.9432767600657,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "algorithm": "hio",
+      "starts": 16,
+      "iterations_per_s": 552.6736615806449,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "algorithm": "raar",
+      "starts": 1,
+      "iterations_per_s": 756.4697987841766,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "algorithm": "raar",
+      "starts": 16,
+      "iterations_per_s": 501.36876965109764,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "algorithm": "hio",
+      "starts": 1,
+      "iterations_per_s": 174.10417412546502,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "algorithm": "hio",
+      "starts": 16,
+      "iterations_per_s": 121.4160162690645,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "algorithm": "raar",
+      "starts": 1,
+      "iterations_per_s": 164.2079490288115,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "algorithm": "raar",
+      "starts": 16,
+      "iterations_per_s": 108.19929120363001,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 1024,
+      "algorithm": "hio",
+      "starts": 1,
+      "iterations_per_s": 25.690999529291904,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 1024,
+      "algorithm": "raar",
+      "starts": 1,
+      "iterations_per_s": 24.78932880649477,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 64,
+      "seconds": 0.0005159100110176951,
+      "steps_per_s": 1938.3225342485189,
+      "case": "fast_furious",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "seconds": 0.0018825209699571133,
+      "steps_per_s": 531.2025820476154,
+      "case": "fast_furious",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "seconds": 0.00455888599390164,
+      "steps_per_s": 219.35183317540435,
+      "case": "fast_furious",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "wavelengths": 1,
+      "engine": "fft",
+      "seconds": 0.0037967910175211728,
+      "evals_per_s": 263.3803112642408,
+      "case": "focal_gradient",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "wavelengths": 5,
+      "engine": "mft",
+      "seconds": 0.011401653056964278,
+      "evals_per_s": 87.70658035320474,
+      "case": "focal_gradient",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "wavelengths": 1,
+      "engine": "fft",
+      "seconds": 0.01574522303417325,
+      "evals_per_s": 63.51132644038205,
+      "case": "focal_gradient",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "wavelengths": 5,
+      "engine": "mft",
+      "seconds": 0.06709499302087352,
+      "evals_per_s": 14.904241806670969,
+      "case": "focal_gradient",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "wavelengths": 1,
+      "engine": "fft",
+      "seconds": 0.09754513402003795,
+      "evals_per_s": 10.251664627315778,
+      "case": "focal_gradient",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 64,
+      "seconds": 0.12806229799753055,
+      "iterations": 6,
+      "error_nm": 0.1542861938906831,
+      "case": "focal_lm",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "seconds": 0.8051349190063775,
+      "iterations": 6,
+      "error_nm": 0.15700733822198312,
+      "case": "focal_lm",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "seconds": 2.3400255020242184,
+      "iterations": 6,
+      "error_nm": 0.20996287695043445,
+      "case": "focal_lm",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "iterations_per_s": 182.81300162525807,
+      "case": "gerchberg_saxton",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "iterations_per_s": 34.09129419152152,
+      "case": "gerchberg_saxton",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "iterations_per_s": 6.3725170229473616,
+      "case": "gerchberg_saxton",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 32,
+      "seconds": 0.010192257992457598,
+      "estimates_per_s": 98.11368597027399,
+      "case": "lift",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 64,
+      "seconds": 0.01956164400326088,
+      "estimates_per_s": 51.12044774116645,
+      "case": "lift",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "seconds": 0.07053329102927819,
+      "estimates_per_s": 14.177702265231074,
+      "case": "lift",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 64,
+      "seconds": 0.08841926296008751,
+      "error_nm": 0.8659183320240883,
+      "case": "phase_diversity",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "seconds": 0.2645052204898093,
+      "error_nm": 0.05197406421048938,
+      "case": "phase_diversity",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 64,
+      "seconds": 0.7905084704689216,
+      "error_nm": 0.15405938953336407,
+      "case": "retrieve_auto",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "seconds": 4.870813943009125,
+      "error_nm": 0.16958219222457954,
+      "case": "retrieve_auto",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "method": "fft",
+      "seconds": 0.03799735102802515,
+      "case": "tie",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "method": "dct",
+      "seconds": 0.048959009000100195,
+      "case": "tie",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 1024,
+      "method": "fft",
+      "seconds": 0.10720902297180146,
+      "case": "tie",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 1024,
+      "method": "dct",
+      "seconds": 0.11183578101918101,
+      "case": "tie",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 2048,
+      "method": "fft",
+      "seconds": 0.25289004301885143,
+      "case": "tie",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 2048,
+      "method": "dct",
+      "seconds": 0.33561828394886106,
+      "case": "tie",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "seconds": 0.03460408200044185,
+      "case": "unwrap",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "seconds": 0.10142399999313056,
+      "case": "unwrap",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "seconds": 0.49606603098800406,
+      "case": "unwrap",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 64,
+      "method": "raf",
+      "seconds": 0.16992878550081514,
+      "iterations": 160,
+      "case": "wirtinger",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 64,
+      "method": "lbfgs",
+      "seconds": 0.12340244450024329,
+      "iterations": 30,
+      "case": "wirtinger",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "method": "raf",
+      "seconds": 0.5199296564678662,
+      "iterations": 150,
+      "case": "wirtinger",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "method": "lbfgs",
+      "seconds": 0.39110201099538244,
+      "iterations": 30,
+      "case": "wirtinger",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "method": "raf",
+      "seconds": 2.3773946139845066,
+      "iterations": 160,
+      "case": "wirtinger",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "method": "lbfgs",
+      "seconds": 1.6386960679956246,
+      "iterations": 30,
+      "case": "wirtinger",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "algorithm": "hio",
+      "starts": 1,
+      "iterations_per_s": 2968.6315985512906,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "algorithm": "hio",
+      "starts": 16,
+      "iterations_per_s": 3924.9567304744737,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "algorithm": "raar",
+      "starts": 1,
+      "iterations_per_s": 2908.701418784268,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "algorithm": "raar",
+      "starts": 16,
+      "iterations_per_s": 3331.497913966358,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "algorithm": "hio",
+      "starts": 1,
+      "iterations_per_s": 905.0102263878932,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "algorithm": "hio",
+      "starts": 16,
+      "iterations_per_s": 954.815547912037,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "algorithm": "raar",
+      "starts": 1,
+      "iterations_per_s": 779.4639983803504,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "algorithm": "raar",
+      "starts": 16,
+      "iterations_per_s": 815.7293962856489,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 1024,
+      "algorithm": "hio",
+      "starts": 1,
+      "iterations_per_s": 226.27086670691867,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 1024,
+      "algorithm": "raar",
+      "starts": 1,
+      "iterations_per_s": 194.98894859428742,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "seconds": 0.0012773385096807033,
+      "steps_per_s": 782.8778295034496,
+      "case": "fast_furious",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.0012718199868686497,
+      "steps_per_s": 786.274795430839,
+      "case": "fast_furious",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "seconds": 0.0016523950034752488,
+      "steps_per_s": 605.1821736914245,
+      "case": "fast_furious",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "wavelengths": 1,
+      "engine": "fft",
+      "seconds": 0.0020374470041133463,
+      "evals_per_s": 490.81031211173945,
+      "case": "focal_gradient",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "wavelengths": 5,
+      "engine": "mft",
+      "seconds": 0.0025061829946935177,
+      "evals_per_s": 399.0131614959308,
+      "case": "focal_gradient",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "wavelengths": 1,
+      "engine": "fft",
+      "seconds": 0.005895309033803642,
+      "evals_per_s": 169.62639180847182,
+      "case": "focal_gradient",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "wavelengths": 5,
+      "engine": "mft",
+      "seconds": 0.009100119001232088,
+      "evals_per_s": 109.88867286950946,
+      "case": "focal_gradient",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "wavelengths": 1,
+      "engine": "fft",
+      "seconds": 0.014369200973305851,
+      "evals_per_s": 69.59329205971395,
+      "case": "focal_gradient",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "seconds": 0.09218734799651429,
+      "iterations": 9,
+      "error_nm": 0.1542854978969077,
+      "case": "focal_lm",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.25241325597744435,
+      "iterations": 11,
+      "error_nm": 0.15700267598636994,
+      "case": "focal_lm",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "seconds": 0.8911609349888749,
+      "iterations": 10,
+      "error_nm": 0.2099337061774561,
+      "case": "focal_lm",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "iterations_per_s": 973.060357428181,
+      "case": "gerchberg_saxton",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "iterations_per_s": 272.60290684335433,
+      "case": "gerchberg_saxton",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "iterations_per_s": 70.16461837475008,
+      "case": "gerchberg_saxton",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 32,
+      "seconds": 0.03769008500967175,
+      "estimates_per_s": 26.532176824313012,
+      "case": "lift",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "seconds": 0.04285520996199921,
+      "estimates_per_s": 23.334385734820227,
+      "case": "lift",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.045102345990017056,
+      "estimates_per_s": 22.17179568045839,
+      "case": "lift",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "seconds": 0.2361168699862901,
+      "error_nm": 0.8608690259430541,
+      "case": "phase_diversity",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.22428101449622773,
+      "error_nm": 0.053756954049863116,
+      "case": "phase_diversity",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "seconds": 0.5969618745148182,
+      "error_nm": 0.15406105452815277,
+      "case": "retrieve_auto",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.8801568885101005,
+      "error_nm": 0.1695898875888523,
+      "case": "retrieve_auto",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "method": "fft",
+      "seconds": 0.0027009189943782985,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "method": "dct",
+      "seconds": 0.0067086899653077126,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 1024,
+      "method": "fft",
+      "seconds": 0.008736412972211838,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 1024,
+      "method": "dct",
+      "seconds": 0.025264264026191086,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 2048,
+      "method": "fft",
+      "seconds": 0.03329537599347532,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 2048,
+      "method": "dct",
+      "seconds": 0.10304553300375119,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.06466291204560548,
+      "case": "unwrap",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "seconds": 0.09770683903479949,
+      "case": "unwrap",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "seconds": 0.3638889800058678,
+      "case": "unwrap",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "method": "raf",
+      "seconds": 0.10036723897792399,
+      "iterations": 160,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "method": "lbfgs",
+      "seconds": 0.17099332495126873,
+      "iterations": 30,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "method": "raf",
+      "seconds": 0.11400687749846838,
+      "iterations": 150,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "method": "lbfgs",
+      "seconds": 0.17454528095549904,
+      "iterations": 30,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "method": "raf",
+      "seconds": 0.446714568475727,
+      "iterations": 160,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "method": "lbfgs",
+      "seconds": 0.3813304755021818,
+      "iterations": 30,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    }
+  ]
+}

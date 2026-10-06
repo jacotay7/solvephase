@@ -1,19 +1,19 @@
 {
   "solvephase": "0.1.0",
   "quick": false,
-  "seconds": 65.03744636796182,
+  "seconds": 70.26170250499854,
   "passed": true,
   "checks": [
     {
       "name": "hcipy q=2 1 wavelength(s) [fft]",
-      "value": 1.7763568394002505e-15,
+      "value": 1.27675647831893e-15,
       "threshold": 1e-10,
       "below": true,
       "passed": true
     },
     {
       "name": "hcipy q=3 1 wavelength(s) [fft]",
-      "value": 1.7763568394002505e-15,
+      "value": 3.885780586188048e-15,
       "threshold": 1e-10,
       "below": true,
       "passed": true
@@ -48,27 +48,27 @@
     },
     {
       "name": "CRB efficiency: mean variance/CRB",
-      "value": 1.098281302775674,
+      "value": 1.0982813027756775,
       "threshold": 1.4010037656936685,
       "below": true,
       "passed": true
     },
     {
       "name": "CRB efficiency: mean variance/CRB (lower)",
-      "value": 1.098281302775674,
+      "value": 1.0982813027756775,
       "threshold": 0.7137739558500598,
       "below": false,
       "passed": true
     },
     {
       "name": "estimator bias [CRB sigma], max over modes",
-      "value": 0.08690104173740654,
+      "value": 0.08690104173742431,
       "threshold": 0.848528137423857,
       "below": true,
       "passed": true
     },
     {
-      "name": "capture success rate at <= 0.15 waves RMS",
+      "name": "capture success rate at <= 0.3 waves RMS",
       "value": 1.0,
       "threshold": 1.0,
       "below": false,
@@ -76,35 +76,35 @@
     },
     {
       "name": "single vs double precision solution difference [nm]",
-      "value": 7.15677895306836e-06,
+      "value": 8.245553019406273e-06,
       "threshold": 0.05,
       "below": true,
       "passed": true
     },
     {
       "name": "phase diversity (extended scene) relative wavefront error",
-      "value": 0.03146252854772461,
+      "value": 0.031462528547581504,
       "threshold": 0.1,
       "below": true,
       "passed": true
     },
     {
       "name": "LIFT variance / Cramer-Rao bound",
-      "value": 1.0085075185022723,
+      "value": 1.008507518502273,
       "threshold": 1.4634275570907938,
       "below": true,
       "passed": true
     },
     {
       "name": "LIFT variance / CRB (lower)",
-      "value": 1.0085075185022723,
+      "value": 1.008507518502273,
       "threshold": 0.683327299089502,
       "below": false,
       "passed": true
     },
     {
       "name": "Fast & Furious residual after 20 steps / initial",
-      "value": 0.08005339375419866,
+      "value": 0.08005339375419881,
       "threshold": 0.2,
       "below": true,
       "passed": true

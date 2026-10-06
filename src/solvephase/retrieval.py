@@ -491,8 +491,9 @@ class FocalPlaneProblem:
         # cancelling terms that float32 cannot resolve.
         jac = xp.concatenate(rows, axis=0).astype(np.float64)
         h = curv.reshape(-1).astype(np.float64)
-        hess = (jac * h[None, :]) @ jac.T
-        grad = jac @ g_model.reshape(-1).astype(np.float64)
+        with be.blas_limit(float(jac.shape[0]) ** 2 * jac.shape[1]):
+            hess = (jac * h[None, :]) @ jac.T
+            grad = jac @ g_model.reshape(-1).astype(np.float64)
         value = float(val)
         if self._has_reg:
             reg_val, reg_grad = self._regularization(x)

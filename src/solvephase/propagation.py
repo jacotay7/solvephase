@@ -239,13 +239,23 @@ class MFTPropagator(Propagator):
         f = np.arange(m, dtype=np.float64) - (m - 1) / 2.0 + self.offset[axis]
         return np.exp(-2j * np.pi * np.outer(f, x) / big) / math.sqrt(big)
 
+    def _work(self, field: Any) -> float:
+        my, mx = self.out_shape
+        ny, nx = self.in_shape
+        return float(field.size // (ny * nx)) * (my * ny * nx + my * nx * mx)
+
     def forward(self, field: Any) -> Any:
         xp = self.backend.xp
-        return xp.matmul(xp.matmul(self._ay, field), self._axt)
+        with self.backend.blas_limit(self._work(field)):
+            return xp.matmul(xp.matmul(self._ay, field), self._axt)
 
     def adjoint(self, field: Any) -> Any:
         xp = self.backend.xp
-        return xp.matmul(xp.matmul(self._ayh, field), self._axc)
+        my, mx = self.out_shape
+        ny, nx = self.in_shape
+        work = float(field.size // (my * mx)) * (ny * my * mx + ny * mx * nx)
+        with self.backend.blas_limit(work):
+            return xp.matmul(xp.matmul(self._ayh, field), self._axc)
 
 
 # ----------------------------------------------------------- focal plane

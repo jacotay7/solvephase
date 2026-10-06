@@ -95,7 +95,19 @@ See **[Choosing an algorithm](https://jacotay7.github.io/solvephase/choosing/)**
 See the [benchmarks page](https://jacotay7.github.io/solvephase/benchmarks/)
 and the versioned artifacts in [`benchmarks/artifacts`](benchmarks/artifacts).
 
-<!-- BENCHMARK TABLE -->
+Same problem, same data, on an Intel i7-10700 and an entry-level NVIDIA
+Quadro P620 ([artifacts](benchmarks/artifacts)):
+
+| Task | Baseline | solvephase CPU | solvephase GPU |
+|---|---|---|---|
+| Focal-plane retrieval, 128², 36 modes, 2 images (time to solution) | HCIPy + SciPy L-BFGS-B: 8.5 s; `least_squares`: 5.3 s | **0.46 s** | **0.14 s** |
+| Misell/GS, 128², iterations/s | textbook NumPy: 156 | 268 | **1,493** |
+| CDI HIO, 256², iterations/s | textbook NumPy: 252 | 794 | **2,957** (3,492 per start with 16 batched starts) |
+| Broadband (5 λ) gradient, 256² | — | 67 ms | **9 ms** |
+| TIE, 2048², 3 planes | — | 253 ms | **33 ms** |
+
+On the focal-plane problem every method reaches 0.12–0.19 nm RMS; solvephase
+gets there 11–18x faster on the CPU and 38–61x faster on the GPU.
 
 ## Validation
 

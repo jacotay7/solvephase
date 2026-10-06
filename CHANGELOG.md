@@ -95,6 +95,12 @@ First release.
 - Ambiguity-aware metrics: `rms`, `wavefront_error` (with twin handling) and
   `strehl_from_rms`.
 - A `solvephase` command line with `info` and `retrieve`.
+- CPU threading tuned for contended and hyper-threaded machines:
+  - FFT worker counts scale with the transform size.
+  - BLAS threads are limited, per call, for matrix Fourier transforms and
+    Gauss-Newton products (via threadpoolctl). This made broadband
+    gradients up to 10x faster.
+  - Scalar products avoid threaded level-1 BLAS.
 
 ### Quality
 

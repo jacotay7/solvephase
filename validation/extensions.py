@@ -8,7 +8,8 @@ with a documented threshold. ``run(check, quick)`` is called by
 from __future__ import annotations
 
 import math
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 
@@ -22,19 +23,29 @@ def _phase_diversity(check: Check, quick: bool) -> list[dict[str, Any]]:
     pupil = sp.Pupil.circular(64, 1.0)
     truth = sp.random_aberration(pupil, 0.075 * LAM, n_modes=20, start=4, seed=1)
     model = sp.FocalPlaneModel(
-        pupil, LAM, 64, sampling=2.0, diversity=sp.zernike_diversity(pupil, 4, [0.0, LAM / (2 * math.sqrt(3))])
+        pupil,
+        LAM,
+        64,
+        sampling=2.0,
+        diversity=sp.zernike_diversity(pupil, 4, [0.0, LAM / (2 * math.sqrt(3))]),
     )
     rng = np.random.default_rng(2)
     yy, xx = np.mgrid[:64, :64] - 31.5
     scene = np.full((64, 64), 1e-3)
     for _ in range(8):
         cy, cx = rng.uniform(-12, 12, 2)
-        scene += rng.uniform(0.3, 1.0) * np.exp(-0.5 * ((yy - cy) ** 2 + (xx - cx) ** 2) / rng.uniform(1, 3) ** 2)
+        scene += rng.uniform(0.3, 1.0) * np.exp(
+            -0.5 * ((yy - cy) ** 2 + (xx - cx) ** 2) / rng.uniform(1, 3) ** 2
+        )
     psf = sp.to_numpy(model.images(truth))
-    clean = np.fft.irfft2(np.fft.rfft2(scene) * np.fft.rfft2(np.fft.ifftshift(psf, axes=(-2, -1))), s=(64, 64))
+    clean = np.fft.irfft2(
+        np.fft.rfft2(scene) * np.fft.rfft2(np.fft.ifftshift(psf, axes=(-2, -1))), s=(64, 64)
+    )
     images = rng.poisson(clean * 1000 / clean[0].mean()).astype(float)
     res = sp.phase_diversity(model, images, basis=sp.Basis.zernike(pupil, 20, start=4))
-    rel = sp.wavefront_error(res.opd, truth, pupil, remove="tiptilt") / sp.rms(truth, pupil, "tiptilt")
+    rel = sp.wavefront_error(res.opd, truth, pupil, remove="tiptilt") / sp.rms(
+        truth, pupil, "tiptilt"
+    )
     return [check("phase diversity (extended scene) relative wavefront error", rel, 0.1)]
 
 
@@ -53,7 +64,10 @@ def _lift(check: Check, quick: bool) -> list[dict[str, Any]]:
         est.append(sensor.estimate(img, start=truth).coefficients)
     ratio = float(np.mean(np.var(np.asarray(est), axis=0, ddof=1) / bound))
     tol = 1 + 4 * math.sqrt(2 / (trials - 1))
-    return [check("LIFT variance / Cramer-Rao bound", ratio, tol), check("LIFT variance / CRB (lower)", ratio, 1 / tol, below=False)]
+    return [
+        check("LIFT variance / Cramer-Rao bound", ratio, tol),
+        check("LIFT variance / CRB (lower)", ratio, 1 / tol, below=False),
+    ]
 
 
 def _fast_furious(check: Check, quick: bool) -> list[dict[str, Any]]:
@@ -77,7 +91,14 @@ def _cdi(check: Check, quick: bool) -> list[dict[str, Any]]:
         obj = np.where(outline, 0.3 + gaussian_filter(rng.uniform(size=(48, 48)), 1.5), 0.0)
         data = sp.simulate_cdi(obj, oversampling=2)
         support = np.pad(outline, 24)
-        res = sp.cdi(np.sqrt(data.intensity), support, schedule="hio:500,er:100", starts=4, constraint="positive", seed=t)
+        res = sp.cdi(
+            np.sqrt(data.intensity),
+            support,
+            schedule="hio:500,er:100",
+            starts=4,
+            constraint="positive",
+            seed=t,
+        )
         _, err = sp.align_object(res.object, data.object)
         ok += err < 1e-3
     return [check("CDI (HIO+ER, 4 starts) noise-free success rate", ok / trials, 1.0, below=False)]
@@ -116,7 +137,14 @@ def _wirtinger(check: Check, quick: bool) -> list[dict[str, Any]]:
         y = np.abs(sp.to_numpy(op.forward(truth))) ** 2
         res = wirtinger(op, y, method="raf", seed=t)
         ok += relative_error(res.x, truth) < 1e-5
-    return [check("Reweighted amplitude flow (m = 8n, Gaussian) exact-recovery rate", ok / trials, 1.0, below=False)]
+    return [
+        check(
+            "Reweighted amplitude flow (m = 8n, Gaussian) exact-recovery rate",
+            ok / trials,
+            1.0,
+            below=False,
+        )
+    ]
 
 
 def run(check: Check, quick: bool) -> list[dict[str, Any]]:

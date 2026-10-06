@@ -28,9 +28,13 @@ measurements = np.abs(sp.to_numpy(operator.forward(backend.asarray(truth, dtype=
 
 fig, ax = plt.subplots(figsize=(6, 4))
 for method in ("wf", "twf", "taf", "raf", "lbfgs"):
-    result = wirtinger(operator, measurements, method=method, iterations=300 if QUICK else 1000, tol=1e-8, seed=3)
+    result = wirtinger(
+        operator, measurements, method=method, iterations=300 if QUICK else 1000, tol=1e-8, seed=3
+    )
     err = relative_error(result.x, truth)
-    print(f"{method:6s} relative error {err:.2e} in {result.n_iter:4d} iterations, {result.elapsed:.2f} s")
+    print(
+        f"{method:6s} relative error {err:.2e} in {result.n_iter:4d} iterations, {result.elapsed:.2f} s"
+    )
     ax.semilogy(result.times, result.history, label=method)
 ax.set_xlabel("time [s]")
 ax.set_ylabel("objective")

@@ -30,15 +30,45 @@ def _key(row: dict[str, Any], fields: list[str]) -> tuple[Any, ...]:
 
 SPECS: list[tuple[str, str, list[str], str, str]] = [
     ("focal_lm", "Focal-plane LM time to solution (36 modes, 2 images)", ["size"], "seconds", "s"),
-    ("focal_gradient", "Objective + gradient evaluation (zonal, 2 images)", ["size", "wavelengths"], "seconds", "ms"),
-    ("gerchberg_saxton", "Gerchberg-Saxton/Misell iterations per second (3 images)", ["size"], "iterations_per_s", "rate"),
+    (
+        "focal_gradient",
+        "Objective + gradient evaluation (zonal, 2 images)",
+        ["size", "wavelengths"],
+        "seconds",
+        "ms",
+    ),
+    (
+        "gerchberg_saxton",
+        "Gerchberg-Saxton/Misell iterations per second (3 images)",
+        ["size"],
+        "iterations_per_s",
+        "rate",
+    ),
     ("retrieve_auto", "`retrieve()` end to end (robust default)", ["size"], "seconds", "s"),
-    ("cdi", "CDI iterations per second (total over starts)", ["size", "algorithm", "starts"], "iterations_per_s", "rate"),
+    (
+        "cdi",
+        "CDI iterations per second (total over starts)",
+        ["size", "algorithm", "starts"],
+        "iterations_per_s",
+        "rate",
+    ),
     ("tie", "TIE solve (3 planes, non-uniform intensity)", ["size", "method"], "seconds", "ms"),
     ("lift", "LIFT estimate (10 modes, one image)", ["size"], "seconds", "ms"),
     ("fast_furious", "Fast & Furious step latency", ["size"], "seconds", "ms"),
-    ("phase_diversity", "Extended-object phase diversity solve (20 modes)", ["size"], "seconds", "s"),
-    ("wirtinger", "Coded-diffraction retrieval (6 masks) to 1e-6", ["size", "method"], "seconds", "s"),
+    (
+        "phase_diversity",
+        "Extended-object phase diversity solve (20 modes)",
+        ["size"],
+        "seconds",
+        "s",
+    ),
+    (
+        "wirtinger",
+        "Coded-diffraction retrieval (6 masks) to 1e-6",
+        ["size", "method"],
+        "seconds",
+        "s",
+    ),
     ("unwrap", "Least-squares phase unwrapping (spidered pupil)", ["size"], "seconds", "ms"),
 ]
 
@@ -68,7 +98,7 @@ def render_suite(artifact: dict[str, Any]) -> str:
         lines.append("| " + " | ".join(fields + devices) + " |")
         lines.append("|" + "---|" * (len(fields) + len(devices)))
         for key, values in table.items():
-            cells = [str(k) for k in key] + [values.get(d, "–") for d in devices]
+            cells = [str(k) for k in key] + [values.get(d, "-") for d in devices]
             lines.append("| " + " | ".join(cells) + " |")
         lines.append("")
     return "\n".join(lines)
@@ -92,7 +122,9 @@ def render_compare(artifact: dict[str, Any]) -> str:
             lines.append("| method | iterations/s | speed-up |")
             lines.append("|---|---|---|")
             for r in rows:
-                lines.append(f"| {r['method']} | {r['iterations_per_s']:,.0f} | {r['iterations_per_s'] / base:.1f}x |")
+                lines.append(
+                    f"| {r['method']} | {r['iterations_per_s']:,.0f} | {r['iterations_per_s'] / base:.1f}x |"
+                )
         lines.append("")
     return "\n".join(lines)
 

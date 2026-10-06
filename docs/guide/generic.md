@@ -43,8 +43,8 @@ n, m = 64, 8 * 64
 rng = np.random.default_rng(0)
 x_true = rng.standard_normal(n) + 1j * rng.standard_normal(n)
 
-A = MatrixOperator.gaussian(m, n, seed=1)        # i.i.d. complex Gaussian rows
-y = np.abs(A.forward(x_true)) ** 2               # intensities |A x|^2
+A = MatrixOperator.gaussian(m, n, seed=1)  # i.i.d. complex Gaussian rows
+y = np.abs(A.forward(x_true)) ** 2  # intensities |A x|^2
 
 result = wirtinger(A, y, method="raf", seed=0)
 print(result.message, result.n_iter)

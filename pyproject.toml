@@ -1,0 +1,162 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "solvephase"
+dynamic = ["version"]
+description = "Fast, GPU-optional phase retrieval for adaptive optics, optical metrology and coherent imaging."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Jacob Taylor", email = "jacobataylor7@gmail.com" }]
+keywords = [
+    "phase-retrieval",
+    "adaptive-optics",
+    "wavefront-sensing",
+    "phase-diversity",
+    "coherent-diffraction-imaging",
+    "gerchberg-saxton",
+    "gpu",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Typing :: Typed",
+]
+dependencies = [
+    "numpy>=1.23",
+    "scipy>=1.10",
+    "aobasis>=2.0",
+]
+
+[project.optional-dependencies]
+cuda12 = ["cupy-cuda12x[ctk]>=13.0"]
+cuda13 = ["cupy-cuda13x[ctk]>=13.6"]
+gpu = ["cupy-cuda12x[ctk]>=13.0"]
+plot = ["matplotlib>=3.7"]
+fits = ["astropy>=5.0"]
+interop = ["pyturb>=1.2", "getframes>=2.2"]
+validation = ["hcipy>=0.6", "matplotlib>=3.7"]
+docs = ["mkdocs>=1.5", "mkdocs-material>=9.5", "mkdocstrings[python]>=0.24"]
+test = ["pytest>=7.0", "pytest-cov>=4.0", "pytest-timeout>=2.0"]
+dev = [
+    "build>=1.0",
+    "mypy>=1.8",
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-timeout>=2.0",
+    "ruff>=0.6",
+    "matplotlib>=3.7",
+]
+
+[project.scripts]
+solvephase = "solvephase.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/jacotay7/solvephase"
+Documentation = "https://jacotay7.github.io/solvephase/"
+Repository = "https://github.com/jacotay7/solvephase"
+Issues = "https://github.com/jacotay7/solvephase/issues"
+Changelog = "https://github.com/jacotay7/solvephase/blob/main/CHANGELOG.md"
+
+[tool.hatch.version]
+path = "src/solvephase/__about__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/solvephase"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/solvephase",
+    "tests",
+    "docs",
+    "examples",
+    "validation",
+    "benchmarks",
+    "README.md",
+    "AGENTS.md",
+    "CONTRIBUTING.md",
+    "ROADMAP.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "mkdocs.yml",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+extend-exclude = ["site"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "C4", "SIM", "RUF", "NPY"]
+ignore = ["B905", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+# Benchmark closures are timed immediately inside their loop; prints can be long.
+"benchmarks/*" = ["B023", "E501"]
+"examples/*" = ["E501"]
+"validation/*" = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["solvephase"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src/solvephase"]
+disallow_untyped_defs = true
+check_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = [
+    "cupy.*",
+    "cupyx.*",
+    "scipy.*",
+    "matplotlib.*",
+    "aobasis.*",
+    "pyturb.*",
+    "getframes.*",
+    "hcipy.*",
+    "astropy.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra --strict-markers"
+testpaths = ["tests"]
+markers = [
+    "gpu: CuPy/CUDA backend tests; run with --run-gpu",
+    "slow: slower statistical, convergence or example tests; run with --run-slow",
+    "interop: tests that need the optional pyturb/getframes/hcipy siblings",
+]
+
+[tool.coverage.run]
+source = ["solvephase"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@overload",
+]

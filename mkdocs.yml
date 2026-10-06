@@ -1,0 +1,91 @@
+site_name: solvephase
+site_description: Fast, GPU-optional phase retrieval for adaptive optics, optical metrology and coherent imaging
+site_url: https://jacotay7.github.io/solvephase/
+repo_url: https://github.com/jacotay7/solvephase
+repo_name: jacotay7/solvephase
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - toc.integrate
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: deep orange
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: deep orange
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Quickstart: quickstart.md
+  - Concepts: concepts.md
+  - Conventions and units: conventions.md
+  - Choosing an algorithm: choosing.md
+  - Guides:
+      - Focal-plane retrieval: guide/focal-plane.md
+      - Pupils and bases: guide/pupils-and-bases.md
+      - Phase diversity (extended objects): guide/phase-diversity.md
+      - AO wavefront sensing (LIFT, F&F): guide/ao-wavefront-sensing.md
+      - Coherent diffraction imaging: guide/cdi.md
+      - Generic measurement models: guide/generic.md
+      - Transport of intensity: guide/tie.md
+      - GPU and performance: guide/performance.md
+      - Simulation and interoperability: guide/interop.md
+  - Benchmarks: benchmarks.md
+  - Validation: validation.md
+  - Examples: examples.md
+  - API reference: api.md
+  - Project:
+      - Changelog: changelog.md
+      - Roadmap: roadmap.md
+      - Contributing: contributing.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: numpy
+            show_root_heading: true
+            show_source: false
+            members_order: source
+            separate_signature: true
+            show_signature_annotations: false
+            merge_init_into_class: true
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js

@@ -1,0 +1,134 @@
+{
+  "solvephase": "0.1.0",
+  "quick": false,
+  "seconds": 65.03744636796182,
+  "passed": true,
+  "checks": [
+    {
+      "name": "hcipy q=2 1 wavelength(s) [fft]",
+      "value": 1.7763568394002505e-15,
+      "threshold": 1e-10,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "hcipy q=3 1 wavelength(s) [fft]",
+      "value": 1.7763568394002505e-15,
+      "threshold": 1e-10,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "hcipy q=1.37 1 wavelength(s) [mft]",
+      "value": 4.163336342344337e-16,
+      "threshold": 1e-10,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "hcipy q=2 3 wavelength(s) [mft]",
+      "value": 1.4432899320127035e-15,
+      "threshold": 1e-10,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "airy peak normalization (relative error)",
+      "value": 2.2263887833107177e-05,
+      "threshold": 0.002,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "airy first dark ring [lambda/D] error",
+      "value": 0.030299999999999994,
+      "threshold": 0.125,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "CRB efficiency: mean variance/CRB",
+      "value": 1.098281302775674,
+      "threshold": 1.4010037656936685,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "CRB efficiency: mean variance/CRB (lower)",
+      "value": 1.098281302775674,
+      "threshold": 0.7137739558500598,
+      "below": false,
+      "passed": true
+    },
+    {
+      "name": "estimator bias [CRB sigma], max over modes",
+      "value": 0.08690104173740654,
+      "threshold": 0.848528137423857,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "capture success rate at <= 0.15 waves RMS",
+      "value": 1.0,
+      "threshold": 1.0,
+      "below": false,
+      "passed": true
+    },
+    {
+      "name": "single vs double precision solution difference [nm]",
+      "value": 7.15677895306836e-06,
+      "threshold": 0.05,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "phase diversity (extended scene) relative wavefront error",
+      "value": 0.03146252854772461,
+      "threshold": 0.1,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "LIFT variance / Cramer-Rao bound",
+      "value": 1.0085075185022723,
+      "threshold": 1.4634275570907938,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "LIFT variance / CRB (lower)",
+      "value": 1.0085075185022723,
+      "threshold": 0.683327299089502,
+      "below": false,
+      "passed": true
+    },
+    {
+      "name": "Fast & Furious residual after 20 steps / initial",
+      "value": 0.08005339375419866,
+      "threshold": 0.2,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "CDI (HIO+ER, 4 starts) noise-free success rate",
+      "value": 1.0,
+      "threshold": 1.0,
+      "below": false,
+      "passed": true
+    },
+    {
+      "name": "TIE (masked PCG) phase error [rad RMS], soft-edged aperture",
+      "value": 0.0009603293346261131,
+      "threshold": 0.02,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "Reweighted amplitude flow (m = 8n, Gaussian) exact-recovery rate",
+      "value": 1.0,
+      "threshold": 1.0,
+      "below": false,
+      "passed": true
+    }
+  ]
+}

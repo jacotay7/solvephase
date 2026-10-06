@@ -1,0 +1,155 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint, format and type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: python -m mypy
+
+  test:
+    name: Tests (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    needs: lint
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, python-version: "3.10"}
+          - {os: ubuntu-latest, python-version: "3.11"}
+          - {os: ubuntu-latest, python-version: "3.12"}
+          - {os: ubuntu-latest, python-version: "3.13"}
+          - {os: ubuntu-latest, python-version: "3.14"}
+          - {os: macos-latest, python-version: "3.12"}
+          - {os: windows-latest, python-version: "3.12"}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e ".[test,plot]"
+      - run: python -m pytest -q --cov=solvephase --cov-report=term-missing --cov-report=xml
+      - name: Upload coverage report
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
+
+  slow:
+    name: Slow convergence and statistics tests
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[test,plot]"
+      - run: python -m pytest -q --run-slow -m slow
+
+  interop:
+    name: Interoperability (pyturb, getframes, HCIPy)
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[test,interop,validation]"
+      - run: python -m pytest -q -m interop
+
+  validation:
+    name: Validation report
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[validation,interop]"
+      - run: python validation/validate.py --quick --output validation-artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: validation
+          path: validation-artifacts/
+
+  benchmark-smoke:
+    name: Benchmark smoke run
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - run: python benchmarks/run.py --quick --output benchmark-smoke.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-smoke
+          path: benchmark-smoke.json
+
+  examples:
+    name: Run examples headless
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[plot,interop]"
+      - run: |
+          for script in examples/[0-9]*.py; do
+            echo "::group::$script"
+            MPLBACKEND=Agg SOLVEPHASE_QUICK=1 python "$script" --output "$RUNNER_TEMP"
+            echo "::endgroup::"
+          done
+
+  docs:
+    name: Docs build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[docs]"
+      - run: mkdocs build --strict
+
+  wheel:
+    name: Build and install wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build twine
+      - run: python -m build
+      - run: twine check dist/*
+      - run: |
+          cd "$RUNNER_TEMP"
+          pip install "$GITHUB_WORKSPACE"/dist/*.whl
+          python -c "import solvephase as sp; print(sp.__version__); sp.retrieve"
+          solvephase info

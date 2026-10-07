@@ -55,7 +55,7 @@ reference hardware; run `python benchmarks/run.py` to measure yours.
 
 ## Tips
 
-- Set `SOLVEPHASE_FFT_WORKERS=1` when running many solves in parallel
+- Set `AOCORE_FFT_WORKERS=1` (and `AOCORE_BLAS_THREADS=1`) when running many solves in parallel
   processes.
 - Reuse models and problems in loops: building a `FocalPlaneModel` precomputes
   propagation matrices and modulations.

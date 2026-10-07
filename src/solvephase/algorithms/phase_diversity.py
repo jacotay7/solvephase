@@ -47,6 +47,7 @@ from typing import Any
 
 import numpy as np
 
+from .. import _kernels
 from ..backend import Backend
 from ..basis import Basis
 from ..focal import FocalPlaneModel
@@ -421,9 +422,16 @@ class PhaseDiversityProblem:
     # ------------------------------------------------------------- objective
     def _evaluate(self, x: Any) -> tuple[Any, Any, Any, Any]:
         """Forward state, OTFs ``S``, Wiener object ``O`` and residuals ``D - O S``."""
-        xp = self.backend.xp
+        be, xp = self.backend, self.backend.xp
         state = self.model.forward(self._channel_phase(x), self._amplitude(x))
-        otf = self.backend.rfft2(state.images)
+        otf = be.rfft2(state.images)
+        if be.is_gpu:
+            # Fused kernels for the elementwise parts; the sums over channels stay CuPy's.
+            num = xp.sum(self._dhat * xp.conj(otf), axis=0)
+            den = xp.sum(_kernels.abs2(otf), axis=0) + self.regularization
+            obj = num / den
+            resid = _kernels.call("pd_resid", self._dhat, obj, otf)
+            return state, otf, obj, resid
         num = xp.sum(self._dhat * xp.conj(otf), axis=0)
         den = xp.sum(otf.real**2 + otf.imag**2, axis=0) + self.regularization
         obj = num / den
@@ -431,7 +439,17 @@ class PhaseDiversityProblem:
         return state, otf, obj, resid
 
     def _metric(self, obj: Any, resid: Any) -> float:
-        xp = self.backend.xp
+        be, xp = self.backend, self.backend.xp
+        if be.is_gpu:
+            terms = xp.sum(_kernels.abs2(resid), axis=0)
+            if self.regularization:
+                rdt = be.real_dtype.type
+                weighted = _kernels.call(
+                    "pd_terms", terms, self._fweight, rdt(self.regularization), obj
+                )
+            else:
+                weighted = self._fweight * terms
+            return float(xp.sum(weighted)) / self._norm
         terms = xp.sum(resid.real**2 + resid.imag**2, axis=0)
         if self.regularization:
             terms = terms + self.regularization * (obj.real**2 + obj.imag**2)
@@ -450,16 +468,22 @@ class PhaseDiversityProblem:
         # dL/d conj(S_k) = -w O* R_k (O fixed: it minimizes the unreduced metric).
         # Through the real FFT, dL/dp = N irfft2(-2 m O* R_k), with m the in-band mask.
         my, mx = self._shape
-        g_hat = (-2.0 * my * mx / self._norm) * (self._mask * xp.conj(obj)) * resid
+        scale = -2.0 * my * mx / self._norm
+        if be.is_gpu:
+            rdt = be.real_dtype.type
+            g_hat = _kernels.call("pd_grad", rdt(scale), self._mask, obj, resid)
+        else:
+            g_hat = scale * (self._mask * xp.conj(obj)) * resid
         g_psf = be.irfft2(g_hat, self._shape)
         g_phase, g_amp = self.model.vjp(state, g_psf, amplitude=self.fit_amplitude)
-        grad = xp.zeros_like(x)
-        grad[self._coeffs] = self._analyze(xp.sum(g_phase, axis=0))
+        # Blocks in layout order, joined by one concatenate (not zeros + one scatter each).
+        parts = [self._analyze(xp.sum(g_phase, axis=0))]
         if self.fit_amplitude:
-            grad[self._amp_sl] = self._amp_scale * g_amp.reshape(-1)[self._flat_index]
+            parts.append(self._amp_scale * g_amp.reshape(-1)[self._flat_index])
         if self.fit_tilt:
             gt = xp.tensordot(g_phase[1:], self._ramps, axes=([1, 2], [1, 2]))
-            grad[self._tilt_sl] = gt.reshape(-1)
+            parts.append(gt.reshape(-1))
+        grad = xp.concatenate([p.astype(x.dtype, copy=False) for p in parts])
         return value, grad
 
     def object_estimate(self, x: Any) -> Any:

@@ -199,6 +199,8 @@ class FastAndFurious:
         inv = np.where(amp > 0, amp / np.maximum(amp * amp, floor), 0.0)
         self._inv_amp = be.asarray(inv / self._k, dtype="real")  # also radians -> metres
         self._prev_even: Any = None
+        self._graphs: _StepGraphs | None = None
+        self._use_graphs = True  # replay GPU steps from CUDA graphs (same kernels)
         self.n_steps = 0
         self.last_odd_opd: Any = None
         self.last_even_opd: Any = None
@@ -237,26 +239,28 @@ class FastAndFurious:
             p = p[0]
         if tuple(p.shape) != self.image_shape:
             raise ValueError(f"image shape {tuple(p.shape)} does not match {self.image_shape}")
-        total = xp.sum(p)
         if self._fused(p):
-            # One kernel after the two reductions. max(c p) == c max(p) exactly for
-            # c > 0 (rounding is monotonic), so the peak is taken before scaling.
-            rdt = self.backend.real_dtype.type
-            if self.strehl_compensation:
-                return _kernels.call(
-                    "ff_normalize",
-                    p,
-                    total,
-                    xp.max(p),
-                    rdt(self._sum_a2),
-                    rdt(self._max_a2),
-                    self._a2,
-                )
-            return _kernels.call("ff_normalize_plain", p, total, rdt(self._sum_a2))
+            return self._normalize_fused(p)
+        total = xp.sum(p)
         p = p * (self._sum_a2 / xp.where(total > 0, total, 1.0))
         if self.strehl_compensation:
             p = p + (1.0 - xp.max(p) / self._max_a2) * self._a2
         return p
+
+    def _normalize_fused(self, p: Any) -> Any:
+        """:meth:`_normalize` of a device image in one kernel after two reductions.
+
+        ``max(c p) == c max(p)`` exactly for ``c > 0`` (rounding is monotonic),
+        so the peak is taken before scaling.
+        """
+        xp = self.backend.xp
+        rdt = self.backend.real_dtype.type
+        total = xp.sum(p)
+        if self.strehl_compensation:
+            return _kernels.call(
+                "ff_normalize", p, total, xp.max(p), rdt(self._sum_a2), rdt(self._max_a2), self._a2
+            )
+        return _kernels.call("ff_normalize_plain", p, total, rdt(self._sum_a2))
 
     def _fused(self, p: Any) -> bool:
         """Whether the fused GPU kernels apply (contiguous working-precision image)."""
@@ -292,6 +296,10 @@ class FastAndFurious:
         :attr:`last_odd_opd` and :attr:`last_even_opd`.
         """
         xp = self.backend.xp
+        if self.backend.is_gpu and self._use_graphs:
+            opd = self._step_graph(image, dm_change_opd)
+            if opd is not None:
+                return opd
         p = self._normalize(image)
         if self._fused(p):
             return self._step_fused(p, dm_change_opd)
@@ -337,29 +345,160 @@ class FastAndFurious:
             field = (self._amp * (-self._k) * change).astype(be.complex_dtype)
         return self.propagator.forward(field) * self._scale
 
-    def _step_fused(self, p: Any, dm_change_opd: Any) -> Any:
-        """:meth:`step` on the GPU in five fused kernels plus the FFTs (same arithmetic)."""
+    def _variant(self, dm_change_opd: Any) -> str:
+        """Which of the three step variants applies to this frame."""
+        if self._prev_even is None:
+            return "first"
+        return "still" if dm_change_opd is None else "change"
+
+    def _device_step(self, p: Any, prev: Any, change: Any, out: Any, variant: str) -> Any:
+        """Fused GPU step from a normalized image ``p``; writes ``out = (opd, odd, even)``.
+
+        Five fused kernels plus the FFTs, with the arithmetic of the NumPy path.
+        Touches no state (so it can be captured in a CUDA graph); returns the
+        even image part, the next frame's ``prev``.
+        """
         xp = self.backend.xp
         rdt = self.backend.real_dtype.type
         p_even, y, v_abs = _kernels.call("ff_parts", p, self._a, self._a2, self._y_den)
-        if self._prev_even is None or dm_change_opd is None:
+        if variant == "change":
+            div = self._change_field(change)
+            field = _kernels.call("ff_field_signed", v_abs, y, self._window, prev, p_even, div)
+        else:
             # First frame: v = |v| (or 0 without first_even); no DM change: v = 0.
-            first = self._prev_even is None
+            first = variant == "first"
             sign = rdt(1.0 if first and self.first_even else 0.0)
             field = xp.empty(p.shape, dtype=self.backend.complex_dtype)
             _kernels.call("ff_field", v_abs if first else rdt(0.0), sign, y, self._window, field)
-        else:
-            div = self._change_field(dm_change_opd)
-            field = _kernels.call(
-                "ff_field_signed", v_abs, y, self._window, self._prev_even, p_even, div
-            )
-        self._prev_even = p_even
-        self.n_steps += 1
         a_phi = self.propagator.adjoint(field)
-        opd, odd, even = (xp.empty(self.pupil.shape, dtype=p.dtype) for _ in range(3))
-        _kernels.call("ff_opd", a_phi, self._inv_amp, opd, odd, even)
-        self.last_odd_opd, self.last_even_opd = odd, even
-        return opd
+        _kernels.call("ff_opd", a_phi, self._inv_amp, out[0], out[1], out[2])
+        return p_even
+
+    def _step_fused(self, p: Any, dm_change_opd: Any) -> Any:
+        """:meth:`step` on the GPU with fused kernels (same arithmetic as the NumPy path)."""
+        out = self.backend.empty((3, *self.pupil.shape))
+        variant = self._variant(dm_change_opd)
+        self._prev_even = self._device_step(p, self._prev_even, dm_change_opd, out, variant)
+        self.n_steps += 1
+        self.last_odd_opd, self.last_even_opd = out[1], out[2]
+        return out[0]
+
+    def _step_graph(self, image: Any, dm_change_opd: Any) -> Any:
+        """:meth:`step` replayed from a CUDA graph, or ``None`` when one does not apply."""
+        if self._graphs is None:
+            self._graphs = _StepGraphs(self)
+        variant = self._variant(dm_change_opd)
+        out = self._graphs.step(variant, image, dm_change_opd)
+        if out is None:
+            return None
+        self._prev_even = self._graphs.prev
+        self.n_steps += 1
+        self.last_odd_opd, self.last_even_opd = out[1], out[2]
+        return out[0]
+
+
+class _StepGraphs:
+    """Fast & Furious steps replayed from captured CUDA graphs.
+
+    A GPU step is a dozen small kernels and two FFTs; on a small image the
+    host spends far longer launching them (Python and launch overhead) than
+    the device spends running them. Each step variant (first frame, no DM
+    change, DM change) is therefore captured once, on its second use, into a
+    CUDA graph that reads the image, the DM change and the previous even
+    image part from fixed device buffers and writes the estimate there; a
+    step is then one or two copies in, one graph launch and one copy out, and
+    runs exactly the same kernels as the eager path.
+
+    Capture runs under a private memory pool kept alive with the graphs, so
+    the temporaries a graph writes on replay are never handed to other
+    arrays. Where capture is unavailable, the eager path is used.
+    """
+
+    def __init__(self, ff: FastAndFurious) -> None:
+        be = ff.backend
+        cp = be.xp
+        self.ff = ff
+        self.image = be.zeros(ff.image_shape)
+        self.change = be.zeros(ff.pupil.shape)
+        self.prev = be.zeros(ff.image_shape)
+        self.out = be.zeros((3, *ff.pupil.shape))
+        self.stream = cp.cuda.Stream(non_blocking=True)
+        self.pool = cp.cuda.MemoryPool()
+        self.graphs: dict[tuple[Any, ...], Any] = {}
+        self.uses: dict[tuple[Any, ...], int] = {}
+        self.failed = False
+
+    def _load(self, buffer: Any, value: Any) -> bool:
+        """Copy ``value`` into ``buffer`` on the graph stream; False if it does not fit."""
+        be = self.ff.backend
+        if isinstance(value, be.xp.ndarray):
+            if value.ndim == 3 and value.shape[0] == 1 and buffer.ndim == 2:
+                value = value[0]
+            if value.shape != buffer.shape:
+                return False
+            buffer[...] = value
+            return True
+        host = np.asarray(value)
+        if host.ndim == 3 and host.shape[0] == 1 and buffer.ndim == 2:
+            host = host[0]
+        if host.shape != buffer.shape:
+            return False
+        buffer.set(np.ascontiguousarray(host, dtype=buffer.dtype))
+        return True
+
+    def step(self, variant: str, image: Any, change: Any) -> Any:
+        """Run one step; returns a fresh ``(3, ny, nx)`` (opd, odd, even) array, or ``None``."""
+        ff = self.ff
+        key = (variant, ff.first_even, ff.strehl_compensation)
+        if self.failed:
+            return None
+        uses = self.uses.get(key, 0)
+        self.uses[key] = uses + 1
+        if key not in self.graphs and uses == 0:
+            return None  # one-off variants run eagerly; capture on the second use
+        cp = ff.backend.xp
+        current = cp.cuda.get_current_stream()
+        self.stream.wait_event(current.record())
+        with self.stream:
+            if not self._load(self.image, image):
+                return None  # wrong shape: the eager path raises the error
+            if variant == "change" and not self._load(self.change, change):
+                return None
+            if variant == "change" and ff._prev_even is not self.prev:
+                self.prev[...] = ff._prev_even
+            graph = self.graphs.get(key)
+            if graph is None:
+                graph = self._capture(variant)
+                if graph is None:
+                    return None
+                self.graphs[key] = graph
+            graph.launch()
+        current.wait_event(self.stream.record())
+        return self.out.copy()
+
+    def _body(self, variant: str) -> Any:
+        ff = self.ff
+        p = ff._normalize_fused(self.image)
+        return ff._device_step(p, self.prev, self.change, self.out, variant)
+
+    def _capture(self, variant: str) -> Any:
+        cp = self.ff.backend.xp
+        try:
+            # Run once eagerly to compile kernels and create FFT plans (state is not
+            # written: the even part is discarded), then capture the same calls.
+            self._body(variant)
+            self.stream.synchronize()
+            with cp.cuda.using_allocator(self.pool.malloc):
+                self.stream.begin_capture()
+                try:
+                    p_even = self._body(variant)
+                    self.prev[...] = p_even
+                finally:
+                    graph = self.stream.end_capture()
+            return graph
+        except Exception:  # pragma: no cover - driver/runtime without stream capture
+            self.failed = True
+            return None
 
 
 @dataclass

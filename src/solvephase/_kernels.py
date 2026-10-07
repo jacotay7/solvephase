@@ -34,6 +34,9 @@ _PREAMBLE = r"""
 template <typename T> __device__ __forceinline__ T sp_max(T a, T b) {
     return (isnan(a) | isnan(b)) ? T(NAN) : max(a, b);
 }
+// Subtraction that is never contracted into a multiply-add.
+__device__ __forceinline__ float sp_sub(float a, float b) { return __fsub_rn(a, b); }
+__device__ __forceinline__ double sp_sub(double a, double b) { return __dsub_rn(a, b); }
 """
 
 
@@ -144,6 +147,26 @@ _ELEMENTWISE: dict[str, tuple[str, str, str]] = {
         "double resid = (double)model - data; double wr = w * resid; "
         "term = wr * resid; grad = (G)wr;",
     ),
+    # |a|^2 (the real working type is fixed by the output passed).
+    "abs2": ("C a", "T out", "out = a.real() * a.real() + a.imag() * a.imag();"),
+    # Phase diversity (Paxman et al. 1992): the residual d - o s; the metric terms
+    # w (t + gamma |o|^2); the gradient spectrum c (m conj(o)) r. (a * conj(b) is
+    # left to CuPy: inlining the conjugate changes how the product rounds.)
+    "pd_resid": (
+        "C d, C o, C s",
+        "C out",
+        "C os = o * s; out = C(sp_sub(d.real(), os.real()), sp_sub(d.imag(), os.imag()));",
+    ),
+    "pd_terms": (
+        "T terms, T w, T gamma, C o",
+        "T out",
+        "out = w * (terms + gamma * (o.real() * o.real() + o.imag() * o.imag()));",
+    ),
+    "pd_grad": (
+        "T c, T m, C o, C r",
+        "C out",
+        "C t = C(c, 0) * (C(m, 0) * conj(o)); out = t * r;",
+    ),
     # x + alpha * y (optimizer updates).
     "axpy": ("T x, T alpha, T y", "T out", "out = x + alpha * y;"),
     # Gerchberg-Saxton modulus projection: where(measured, target * win / max(|win|, 1e-30), win)
@@ -207,7 +230,9 @@ _ELEMENTWISE: dict[str, tuple[str, str, str]] = {
     ),
 }
 
-_COMPLEX_PRODUCTS = frozenset({"cross_imag", "cross_real", "gs_modulus", "gs_power"})
+_COMPLEX_PRODUCTS = frozenset(
+    {"cross_imag", "cross_real", "gs_modulus", "gs_power", "pd_resid", "pd_grad"}
+)
 
 _REDUCTION: dict[str, tuple[str, str, str, str, str, str]] = {
     # Loss floor 1e-6 max|max(d + shift, 0)| + 1e-30 (``losses._floor``).
@@ -234,6 +259,15 @@ def pupil_field(phase: Any, div: Any, ratio: Any, amp: Any, cdtype: Any) -> tupl
     u = cupy.empty(shape, dtype=cdtype)
     _elementwise("pupil_field")(phase, div, ratio, amp, phasor, u)
     return phasor, u
+
+
+def abs2(a: Any) -> Any:
+    """``a.real**2 + a.imag**2`` of a complex array in one launch."""
+    import cupy
+
+    out = cupy.empty(a.shape, dtype=a.real.dtype)
+    _elementwise("abs2")(a, out)
+    return out
 
 
 def call(name: str, *args: Any) -> Any:

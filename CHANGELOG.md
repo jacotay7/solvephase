@@ -5,6 +5,24 @@ All notable changes to `solvephase` are documented here. The project follows
 
 ## [Unreleased]
 
+### Added
+
+- **Validation on real Keck/NIRC2 data** (`validation/nirc2.py`). Daytime
+  focus-diversity calibrations of the Keck AO bench, with known coma and
+  trefoil patterns injected on the Xinetics DM, are retrieved with
+  `FocalPlaneProblem`.
+  - The injected patterns are recovered with correlations of 0.945–0.965.
+    One DM gain fits all six runs (3 % scatter), and strength ratios come
+    out within 1 % of the commanded values.
+  - The IDL sharpening correction is predicted with no free parameter
+    (correlation 0.90, amplitude within 1 %).
+  - The fitted DM gain (652 nm OPD/V) and pupil size (9.75 actuator pitches)
+    agree with the Keck AO software's Xinetics parameters (600 nm/V; a
+    10.0-pitch control aperture).
+  - The data are not distributed; the script reads them from `--data` or
+    `SOLVEPHASE_NIRC2_DATA`. The report and figures are in
+    `validation/artifacts`.
+
 ## [0.1.0] - 2026-10-07
 
 First release.

@@ -1,0 +1,233 @@
+{
+  "solvephase": "0.1.0",
+  "quick": false,
+  "seconds": 198.85389710200252,
+  "calibration": {
+    "defocus_rms_m_per_stage_unit": 1.8999999999999998e-07,
+    "sampling_pixels_per_lambda_over_d": 3.15,
+    "chi2_grid": [
+      [
+        11.089771668611993,
+        8.637727906822215,
+        7.970733567696921,
+        9.035165275656244
+      ],
+      [
+        8.968393625284003,
+        7.132768233639579,
+        7.154701193740705,
+        8.916673599825286
+      ],
+      [
+        7.695843524684346,
+        6.5335748499575566,
+        7.257948617077894,
+        9.685916761950343
+      ],
+      [
+        7.212669974561454,
+        6.7588230228835355,
+        8.178749012651176,
+        11.212281666418827
+      ]
+    ],
+    "grid_samplings": [
+      2.95,
+      3.05,
+      3.15,
+      3.25
+    ],
+    "grid_scales_m": [
+      1.8e-07,
+      1.8999999999999998e-07,
+      2e-07,
+      2.0999999999999997e-07
+    ]
+  },
+  "dm": {
+    "gain_nm_opd_per_volt": 652.4092534553804,
+    "per_run": {
+      "coma_injection": 669.1295759530581,
+      "coma_injection_half_strength": 653.7594922107778,
+      "injected_combined": 612.1437478656734,
+      "injected_combined_b": 648.6521189863026,
+      "injected_combined_b_stronger": 663.3267239214579,
+      "injected_combined_c": 667.4438617950118
+    },
+    "by_n_modes": {
+      "36": 652.4092534553804,
+      "21": 649.7987347967426,
+      "28": 650.14262813737
+    },
+    "geometry": {
+      "k": 7,
+      "radius": 9.75,
+      "angle": -2.0
+    }
+  },
+  "passed": true,
+  "checks": [
+    {
+      "name": "fit reduced chi2, coma_injection",
+      "value": 5.692593881127537,
+      "threshold": 10.0,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "fit reduced chi2, coma_injection_half_strength",
+      "value": 6.599983207644113,
+      "threshold": 10.0,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "fit reduced chi2, injected_combined",
+      "value": 4.219688312255716,
+      "threshold": 10.0,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "fit reduced chi2, injected_combined_b",
+      "value": 4.501308066620716,
+      "threshold": 10.0,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "fit reduced chi2, injected_combined_b_stronger",
+      "value": 4.0679776238414584,
+      "threshold": 10.0,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "fit reduced chi2, injected_combined_c",
+      "value": 4.270959145730549,
+      "threshold": 10.0,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "fit reduced chi2, no_injection",
+      "value": 6.231421394003028,
+      "threshold": 10.0,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "fit reduced chi2, no_image_sharpening",
+      "value": 7.742282198894993,
+      "threshold": 10.0,
+      "below": true,
+      "passed": true
+    },
+    {
+      "name": "injection recovery correlation, coma_injection",
+      "value": 0.9654430505508262,
+      "threshold": 0.9,
+      "below": false,
+      "passed": true
+    },
+    {
+      "name": "injection recovery correlation, coma_injection_half_strength",
+      "value": 0.9445943537966095,
+      "threshold": 0.9,
+      "below": false,
+      "passed": true
+    },
+    {
+      "name": "injection recovery correlation, injected_combined",
+      "value": 0.9457276721660576,
+      "threshold": 0.9,
+      "below": false,
+      "passed": true
+    },
+    {
+      "name": "injection recovery correlation, injected_combined_b",
+      "value": 0.9451458009113465,
+      "threshold": 0.9,
+      "below": false,
+      "passed": true
+    },
+    {
+      "name": "injection recovery correlation, injected_combined_b_stronger",
+      "value": 0.955766420352865,
+      "threshold": 0.9,
+      "below": false,
+      "passed": true
+    },
+    {
+      "name": "injection recovery correlation, injected_combined_c",
+      "value": 0.9481476753434908,
+      "threshold": 0.9,
+      "below": false,
+      "passed": true
+    },
+    {
+      "name": "DM gain scatter between runs (relative)",
+      "value": 0.02976153704766179,
+      "threshold": 0.1,
+      "below": true,
+      "passed": true,
+      "gain_nm_per_volt": 652.4092534553804
+    },
+    {
+      "name": "DM gain vs Keck software 600 nm/V (relative)",
+      "value": 0.08734875575896739,
+      "threshold": 0.15,
+      "below": true,
+      "passed": true,
+      "gain_nm_per_volt": 652.4092534553804
+    },
+    {
+      "name": "pupil radius vs Xinetics control aperture 10.01 pitches (relative)",
+      "value": 0.026446422458062058,
+      "threshold": 0.05,
+      "below": true,
+      "passed": true,
+      "radius_pitches": 9.75
+    },
+    {
+      "name": "strength ratio coma_injection / coma_injection_half_strength (relative error vs commanded 2.000)",
+      "value": 0.0014076466781280939,
+      "threshold": 0.1,
+      "below": true,
+      "passed": true,
+      "measured": 2.002815293356256,
+      "commanded": 2.0
+    },
+    {
+      "name": "strength ratio injected_combined_b_stronger / injected_combined_b (relative error vs commanded 1.500)",
+      "value": 0.011259685946175324,
+      "threshold": 0.1,
+      "below": true,
+      "passed": true,
+      "measured": 1.5168895289192634,
+      "commanded": 1.5000000000000004
+    },
+    {
+      "name": "sharpening correction predicted with no free parameter: correlation",
+      "value": 0.9024979251901668,
+      "threshold": 0.85,
+      "below": false,
+      "passed": true
+    },
+    {
+      "name": "sharpening correction amplitude, measured / predicted - 1",
+      "value": 0.00616961597439436,
+      "threshold": 0.2,
+      "below": true,
+      "passed": true,
+      "ratio": 0.9938303840256056
+    },
+    {
+      "name": "DM gain change across 21/28/36 fitted modes (relative)",
+      "value": 0.004017426502768373,
+      "threshold": 0.05,
+      "below": true,
+      "passed": true
+    }
+  ]
+}

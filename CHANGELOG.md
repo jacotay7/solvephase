@@ -5,6 +5,41 @@ All notable changes to `solvephase` are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-07
+
+### Performance
+
+Small GPU problems were bound by host-side launch overhead (15-30 us per CuPy
+operation on an Arm host), not by the GPU. Results are unchanged: bitwise
+identical to 0.1.0 on CPU and GPU on the reference machine (Ampere
+Neoverse-N1, 12 pinned cores, NumPy 2.5.3/SciPy 1.18.1; RTX 4060 with CuPy
+14.2.0). Speed-ups below are medians of 0.1.0 and 0.2.0 run alternately,
+three times each (the Benchmarks page, `docs/benchmarks.md`, has the tables).
+
+- **Fast & Furious on the GPU replays each step from a CUDA graph**: one copy
+  in, one graph launch and one copy out per frame, running the same kernels.
+  A step takes 0.11 ms at 64² (was 1.41 ms, 12x) and 0.27 ms at 256² (5.8x),
+  so the GPU now beats the CPU on every size.
+- **Fused GPU kernels** (`solvephase._kernels`) for the focal-plane model,
+  its reverse- and forward-mode derivatives, the Poisson, Gaussian and
+  amplitude losses, the Gerchberg-Saxton projection, the Fast & Furious step
+  and the phase-diversity metric. On the RTX 4060: objective + gradient
+  1.5-1.8x, Levenberg-Marquardt 1.4-1.7x, LIFT 1.8x, phase diversity
+  1.4-1.5x, `retrieve()` 1.2x, Gerchberg-Saxton 1.1-1.2x.
+- **L-BFGS** reuses the scalar products it already has, fuses its vector
+  updates and evaluates real scalar products on the GPU with less overhead:
+  coded-diffraction L-BFGS 1.2-1.3x on the GPU.
+- **`FocalPlaneProblem`** keeps device copies of its flux, background and
+  scaling vectors (no host-to-device copy per evaluation), caches the
+  Gauss-Newton direction maps and assembles gradients and Jacobian blocks
+  without per-channel loops.
+- **CPU**: unit phasors are built from `cos`/`sin` instead of a complex
+  `exp` (same values, about 1.4x faster), Gerchberg-Saxton computes its
+  diversity phasors once instead of every iteration, and the Poisson and
+  amplitude losses skip their Taylor terms when no pixel is below the floor.
+  Gerchberg-Saxton 1.2x, focal-plane objective and LM up to 1.1x on 12
+  Neoverse-N1 cores.
+
 ### Fixed
 
 - **The CDI CPU/GPU parity test failed on aarch64.** After 50 iterations it

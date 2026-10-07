@@ -1,0 +1,97 @@
+{
+  "environment": {
+    "solvephase": "0.1.0",
+    "python": "3.13.15",
+    "platform": "Linux-6.17.9-76061709-generic-aarch64-with-glibc2.39",
+    "processor": "aarch64",
+    "cpu_count": 80,
+    "numpy": "2.5.3",
+    "timestamp": "2026-10-07T06:59:07+00:00",
+    "scipy": "1.18.1",
+    "gpu": "NVIDIA GeForce RTX 4060",
+    "cupy": "14.2.0",
+    "cuda_runtime": 12090,
+    "host": "cfl-test-bench: 80-core Ampere Neoverse-N1 (aarch64), shared",
+    "cpu_pinning": "taskset -c 16-31 (16 cores); OMP/OpenBLAS/FFT threads = 16",
+    "gpus": "NVIDIA GeForce RTX 4060 (8 GB), NVIDIA RTX A400 (4 GB); driver 580.173.02"
+  },
+  "rows": [
+    {
+      "seconds": 0.6354510160163045,
+      "error_nm": 0.12939041062796763,
+      "iterations": 6,
+      "problem": "focal 128x128, 36 modes, 2 images",
+      "method": "solvephase LM (cpu)"
+    },
+    {
+      "seconds": 0.09766029001912102,
+      "error_nm": 0.12939044804752545,
+      "iterations": 9,
+      "problem": "focal 128x128, 36 modes, 2 images",
+      "method": "solvephase LM (gpu)"
+    },
+    {
+      "seconds": 2.9365519550046884,
+      "error_nm": 0.1911658513284471,
+      "evaluations": 8,
+      "problem": "focal 128x128, 36 modes, 2 images",
+      "method": "HCIPy + SciPy least_squares"
+    },
+    {
+      "seconds": 3.0905606810119934,
+      "error_nm": 0.12076580233938293,
+      "iterations": 12,
+      "evaluations": 518,
+      "problem": "focal 128x128, 36 modes, 2 images",
+      "method": "HCIPy + SciPy L-BFGS-B"
+    },
+    {
+      "seconds": 1.0338798309967387,
+      "iterations_per_s": 96.7230397594587,
+      "problem": "Misell/GS 128x128, 2 images (iterations/s)",
+      "method": "NumPy textbook loop"
+    },
+    {
+      "seconds": 0.5860432240006048,
+      "iterations_per_s": 170.63587787493435,
+      "problem": "Misell/GS 128x128, 2 images (iterations/s)",
+      "method": "solvephase (cpu)"
+    },
+    {
+      "seconds": 0.08268631101236679,
+      "iterations_per_s": 1209.3900281153399,
+      "problem": "Misell/GS 128x128, 2 images (iterations/s)",
+      "method": "solvephase (gpu)"
+    },
+    {
+      "seconds": 0.6534776719927322,
+      "iterations_per_s": 153.02741667524361,
+      "problem": "CDI HIO 256x256 (iterations/s)",
+      "method": "NumPy textbook loop"
+    },
+    {
+      "seconds": 0.24491209498955868,
+      "iterations_per_s": 408.3097652007072,
+      "problem": "CDI HIO 256x256 (iterations/s)",
+      "method": "solvephase (cpu)"
+    },
+    {
+      "seconds": 1.5308567469764967,
+      "iterations_per_s": 522.5831885184764,
+      "problem": "CDI HIO 256x256 (iterations/s)",
+      "method": "solvephase (cpu, 16 starts, per start)"
+    },
+    {
+      "seconds": 0.03796361497370526,
+      "iterations_per_s": 2634.1011009953345,
+      "problem": "CDI HIO 256x256 (iterations/s)",
+      "method": "solvephase (gpu)"
+    },
+    {
+      "seconds": 0.029988599999342114,
+      "iterations_per_s": 26676.803852715708,
+      "problem": "CDI HIO 256x256 (iterations/s)",
+      "method": "solvephase (gpu, 16 starts, per start)"
+    }
+  ]
+}

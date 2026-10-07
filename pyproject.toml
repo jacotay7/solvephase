@@ -37,6 +37,7 @@ classifiers = [
 dependencies = [
     "numpy>=1.23",
     "scipy>=1.10",
+    "aocore>=0.1",
     "aobasis>=2.0",
     "threadpoolctl>=3.0",
 ]
@@ -132,6 +133,7 @@ module = [
     "scipy.*",
     "matplotlib.*",
     "aobasis.*",
+    "aocore.*",
     "pyturb.*",
     "getframes.*",
     "hcipy.*",

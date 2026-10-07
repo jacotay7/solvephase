@@ -22,6 +22,11 @@ recovers the phase (wavefront) that produced them. It covers
 
 It runs on NumPy/SciPy, or on CUDA through CuPy with the same code.
 
+The generic optics primitives (backend, propagators, pupils, metrics,
+unwrapping) and the cross-package conventions live in
+[`aocore`](https://github.com/jacotay7/aocore): change them there, not here,
+and keep `tests/test_conformance.py` passing (aocore CONVENTIONS.md).
+
 It belongs to an AO simulation family and reuses rather than copies it:
 [`aobasis`](https://github.com/jacotay7/aobasis) supplies modal bases (a core
 dependency); [`pyturb`](https://github.com/jacotay7/pyturb) (atmospheric OPD)
@@ -34,16 +39,16 @@ to a sibling repository.
 
 ```text
 src/solvephase/
-  backend.py        Backend (NumPy | CuPy, single | double), to_numpy, get_backend
-  propagation.py    FFT, MFT, focal-plane and angular-spectrum propagators (exact adjoints)
-  pupil.py          Pupil: anti-aliased analytic, segmented, telescope presets
+  backend.py        re-exports aocore.backend (Backend, get_backend, to_numpy, ...)
+  propagation.py    re-exports aocore.propagation (FFT/MFT/focal/angular-spectrum propagators)
+  pupil.py          re-exports aocore.pupil (Pupil)
   basis.py          Basis: Zernike/KL/Fourier (via aobasis), zonal, segments, DM
   focal.py          FocalPlaneModel: forward, vjp (reverse mode), jvp (forward mode)
   losses.py         Gaussian, Poisson (deviance), amplitude losses with curvature
   optimize.py       device-resident L-BFGS (strong Wolfe), Levenberg-Marquardt, Adam
   retrieval.py      FocalPlaneProblem + solve(): the nonlinear focal-plane solver
-  unwrap.py         weighted least-squares phase unwrapping (DCT-preconditioned CG)
-  metrics.py        rms, wavefront_error (ambiguity-aware), strehl_from_rms
+  unwrap.py         re-exports aocore.unwrap (unwrap_phase, wrap)
+  metrics.py        re-exports aocore.metrics (rms, wavefront_error, strehl_from_rms)
   result.py         Result returned by every focal-plane solver
   algorithms/       one module per algorithm family (gerchberg_saxton, cdi, ...)
   api.py            retrieve(): the one-call high-level entry point

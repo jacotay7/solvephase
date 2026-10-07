@@ -120,6 +120,15 @@ First release.
   corners, pointy-top segments, six 26 mm support arms, and a 2.57 m central
   obscuration.
 
+### Shared core
+
+- The backend, pupils, propagators, wavefront metrics and phase unwrapping
+  now live in [aocore](https://github.com/jacotay7/aocore), the AO stack's
+  shared core, and solvephase re-exports them unchanged.
+- `tests/test_conformance.py` runs aocore's convention checks against
+  solvephase: image centring, tilt direction, unit flux and the RMS
+  definition.
+
 ### Quality
 
 - More than 280 tests: adjoints, gradients, recovery accuracy, Cramér-Rao

@@ -8,7 +8,7 @@
 
 ## Optics
 
-::: solvephase.Pupil
+::: aocore.Pupil
 
 ::: solvephase.Basis
 
@@ -48,16 +48,21 @@
 
 ::: solvephase.optimize
 
-## Propagation
+## Shared primitives (aocore)
 
-::: solvephase.propagation
+The backend, pupils, propagators, wavefront metrics and phase unwrapping come
+from [aocore](https://github.com/jacotay7/aocore), the stack's shared core.
+solvephase re-exports them unchanged (`solvephase.Pupil`,
+`solvephase.FocalPlanePropagator`, `solvephase.rms`, ...).
 
-## Utilities
+::: aocore.propagation
 
-::: solvephase.metrics
+::: aocore.metrics
 
-::: solvephase.unwrap
+::: aocore.unwrap
+
+::: aocore.backend
+
+## Simulation
 
 ::: solvephase.simulate
-
-::: solvephase.backend

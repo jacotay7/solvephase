@@ -5,6 +5,8 @@ All notable changes to `solvephase` are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-07
+
 First release.
 
 ### Focal-plane phase retrieval

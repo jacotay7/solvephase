@@ -1,7 +1,8 @@
 # solvephase
 
 [![CI](https://github.com/jacotay7/solvephase/actions/workflows/ci.yml/badge.svg)](https://github.com/jacotay7/solvephase/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.10%E2%80%933.14-blue.svg)](https://github.com/jacotay7/solvephase)
+[![PyPI](https://img.shields.io/pypi/v/solvephase.svg)](https://pypi.org/project/solvephase/)
+[![Python](https://img.shields.io/pypi/pyversions/solvephase.svg)](https://pypi.org/project/solvephase/)
 [![Docs](https://img.shields.io/badge/docs-jacotay7.github.io%2Fsolvephase-indigo.svg)](https://jacotay7.github.io/solvephase/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 

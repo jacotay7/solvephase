@@ -135,8 +135,10 @@ note the GPU and CuPy version when you report GPU results.
   on third-party repositories; record them in a solvephase issue instead.
 - No planning or status-tracker files in the repo (ROADMAP.md is the one
   forward-looking document).
-- PIE-family ptychography is deliberately not included until its patent
-  status is checked (see ROADMAP.md).
+- Everything must be usable under the MIT license: never copy code from
+  GPL/LGPL/non-commercial/CeCILL sources, and never add patent-encumbered
+  algorithms. PIE-family ptychography (Phase Focus patents) is excluded on
+  these grounds; other ptychography only if it is clearly unencumbered.
 
 ## Gotchas
 

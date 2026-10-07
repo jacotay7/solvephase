@@ -7,11 +7,9 @@ lands with a benchmark artifact.
 
 ## Algorithms
 
-- [ ] **Ptychography** (PIE/ePIE/rPIE/mPIE, difference-map and LSQ-ML
-      ptychography, position refinement, mixed states). Deferred until the
-      status of the Phase Focus PIE patents has been checked for an MIT
-      release. Difference-map and maximum-likelihood ptychography may be
-      unencumbered and could land first.
+- [ ] **Ptychography**, only methods that are clearly free to ship under
+      MIT (e.g. difference-map or maximum-likelihood ptychography, after a
+      patent check). PIE/ePIE/rPIE/mPIE are excluded (Phase Focus patents).
 - [ ] **Extended-scene phase diversity for field-filling scenes** (solar
       granulation). The Fourier-domain reduced metric with apodization is
       only approximate there. A spatial-domain joint object/wavefront

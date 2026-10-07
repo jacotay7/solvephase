@@ -52,3 +52,77 @@ python validation/validate.py --quick --output /tmp/validation    # CI
 Unit tests add adjoint identities for every operator, finite-difference
 checks of every gradient, CPU/GPU parity, and recovery tests per algorithm
 (`python -m pytest --run-slow --run-gpu`).
+
+## Real data: Keck/NIRC2 focus diversity
+
+Simulations can't show that a forward model matches real optics.
+`validation/nirc2.py` runs solvephase on daytime calibrations of the Keck
+adaptive-optics bench, taken with NIRC2's narrow camera through the full
+circular bench pupil. The script uses no data that would need an outside
+calibration. Each run is a stack of nine H-band (1.6455 µm) images at
+focus-stage offsets from −7 to +2.5. In six runs, a known pattern was added
+to the 349-actuator Xinetics DM command: coma, or coma plus trefoil at three
+strengths.
+
+The data belong to the observatory and are not distributed with solvephase.
+The committed report and figures come from
+
+```bash
+python validation/nirc2.py --data /path/to/image_sharpening_datasets --output validation/artifacts
+```
+
+which takes about 3 minutes (`--quick` takes about 1 minute).
+
+![NIRC2 fit](https://raw.githubusercontent.com/jacotay7/solvephase/main/validation/artifacts/nirc2_fit.png)
+
+![NIRC2 injections](https://raw.githubusercontent.com/jacotay7/solvephase/main/validation/artifacts/nirc2_injections.png)
+
+| Check | Result | Threshold |
+|---|---|---|
+| One wavefront (Noll 2–37) fits all nine images of a run: reduced χ² | 4.1 – 7.7 | ≤ 10 |
+| Injection minus reference recovers the commanded DM pattern (Noll 5–37): correlation, each of 6 runs | 0.945 – 0.965 | ≥ 0.90 |
+| One DM gain explains every run: run-to-run scatter | 3.0 % (652 nm OPD per volt) | ≤ 10 % |
+| Half-strength coma / full coma (needs no gain) | 0.499 (commanded 0.500) | ±10 % |
+| Stronger / base combined injection (needs no gain) | 1.517 (commanded 1.500) | ±10 % |
+| Wavefront change from the IDL sharpening correction, predicted from its DM command with no free parameter: correlation | 0.90 | ≥ 0.85 |
+| Same prediction: measured / predicted amplitude | 0.994 | ±20 % |
+| DM gain across fits with 21, 28 and 36 modes | 0.4 % | ≤ 5 % |
+| DM gain vs the Keck AO software's 600 nm/V | 652 nm/V (+8.7 %) | ±15 % |
+| Fitted pupil radius vs the Xinetics control aperture (5.52 in at 7 mm pitch = 10.0 pitches) | 9.75 pitches (−2.6 %) | ±5 % |
+
+How it works:
+
+- **Calibration.** Two scalars are fitted once on the reference run by profile
+  likelihood: the RMS defocus per focus-stage unit (190 nm) and the sampling
+  (3.15 px per λ/D). The nominal sampling for a 10.95 m aperture at
+  9.971 mas/pixel is 3.11 px per λ/D. Every other run reuses both values.
+- **Retrieval.** Each run is fitted with `FocalPlaneProblem`: a circular
+  pupil, 36 Zernike modes, a Gaussian likelihood with photon and read-noise
+  weights, and per-frame flux, background and tip/tilt. Each frame is
+  cropped around its own centroid, so tip, tilt and focus are left out of
+  run-to-run comparisons.
+- **DM geometry.** One orientation of the 21×21 actuator grid fits every run:
+  a reflection, a −2° rotation, and a pupil radius of 9.75 actuator pitches.
+  It is fitted once by correlation over all six injections. The flip that
+  fits the coma runs alone fails on the trefoil runs, so the combination
+  pins it down.
+
+What it shows: with only two calibration scalars, solvephase's physical
+model turns real, noisy, detector-limited images into wavefronts. Those
+wavefronts are linear in the commanded DM shape (the strength ratios), and
+they are consistent between runs (one gain, one geometry). They also predict
+an independent correction they were never fitted to. Both the DM gain and the
+pupil size agree with the Keck AO software's Xinetics parameters, which the
+fit never sees. The 600 nm/V conversion therefore converts wavefront (OPD),
+not mirror surface.
+
+Limits on these data:
+
+- The residual images show structure the 36-mode model doesn't capture: fine
+  speckle in the far-defocused frames, a slightly sharper in-focus core, and
+  detector column stripes.
+- Fits with 55 modes are not identifiable. Solutions about 300 nm RMS apart
+  differ by only a few per cent in χ², so the injection checks degrade there.
+  This points to unmodelled pupil illumination and detector structure leaking
+  into high-order modes, not to a solver failure: regularization and an
+  orthonormalized basis leave it unchanged, while 21 to 36 modes agree.

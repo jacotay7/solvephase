@@ -55,7 +55,8 @@ src/solvephase/
 tests/              pytest; mirrors the module names
 benchmarks/         speed suite (run.py), head-to-head baselines (compare.py), method
                     comparison feeding docs/choosing.md (methods.py), JSON artifacts
-validation/         physics/statistics evidence (Cramer-Rao, independent references)
+validation/         physics/statistics evidence (Cramer-Rao, independent references);
+                    nirc2.py validates on real Keck/NIRC2 data (data not in the repo)
 docs/               mkdocs-material site
 examples/           headless, deterministic scripts
 ```
@@ -214,3 +215,9 @@ note the GPU and CuPy version when you report GPU results.
   is not a package).
 - GPU timings on a shared device (or CPU timings under load) vary 2-5x;
   record the load and hardware with any performance claim.
+- Real data (validation/nirc2.py): the Keck daytime bench pupil is a full
+  circle; a segmented Keck pupil predicts six-fold spikes the images don't
+  have. Crop each defocused frame around its own centroid (the image walks
+  with focus) and leave tip, tilt and focus out of run-to-run comparisons.
+  Beyond ~36 Zernikes the likelihood on these data has flat directions:
+  cold- and warm-started fits differ by ~300 nm RMS at nearly equal chi2.

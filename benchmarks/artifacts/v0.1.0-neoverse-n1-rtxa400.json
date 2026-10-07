@@ -1,0 +1,412 @@
+{
+  "environment": {
+    "solvephase": "0.1.0",
+    "python": "3.13.15",
+    "platform": "Linux-6.17.9-76061709-generic-aarch64-with-glibc2.39",
+    "processor": "aarch64",
+    "cpu_count": 80,
+    "numpy": "2.5.3",
+    "timestamp": "2026-10-07T06:58:52+00:00",
+    "scipy": "1.18.1",
+    "gpu": "NVIDIA RTX A400",
+    "cupy": "14.2.0",
+    "cuda_runtime": 12090,
+    "host": "cfl-test-bench: 80-core Ampere Neoverse-N1 (aarch64), shared",
+    "cpu_pinning": "taskset -c 16-31 (16 cores); OMP/OpenBLAS/FFT threads = 16",
+    "gpus": "NVIDIA GeForce RTX 4060 (8 GB), NVIDIA RTX A400 (4 GB); driver 580.173.02"
+  },
+  "quick": false,
+  "results": [
+    {
+      "size": 256,
+      "algorithm": "hio",
+      "starts": 1,
+      "iterations_per_s": 2545.1360156339383,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "algorithm": "hio",
+      "starts": 16,
+      "iterations_per_s": 5257.497645062364,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "algorithm": "raar",
+      "starts": 1,
+      "iterations_per_s": 2495.027410484722,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "algorithm": "raar",
+      "starts": 16,
+      "iterations_per_s": 4435.315050559892,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "algorithm": "hio",
+      "starts": 1,
+      "iterations_per_s": 1239.4257307431367,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "algorithm": "hio",
+      "starts": 16,
+      "iterations_per_s": 1310.8303641670104,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "algorithm": "raar",
+      "starts": 1,
+      "iterations_per_s": 1047.5036076324861,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "algorithm": "raar",
+      "starts": 16,
+      "iterations_per_s": 1107.1780456376437,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 1024,
+      "algorithm": "hio",
+      "starts": 1,
+      "iterations_per_s": 309.06975266039933,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 1024,
+      "algorithm": "raar",
+      "starts": 1,
+      "iterations_per_s": 263.21106821730996,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "seconds": 0.0013939560012659058,
+      "steps_per_s": 717.3827574843546,
+      "case": "fast_furious",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.0029239544965093955,
+      "steps_per_s": 342.00258628983306,
+      "case": "fast_furious",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "seconds": 0.0014995579986134544,
+      "steps_per_s": 666.8631696304086,
+      "case": "fast_furious",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "wavelengths": 1,
+      "engine": "fft",
+      "seconds": 0.0022321460128296167,
+      "evals_per_s": 447.99936664194,
+      "case": "focal_gradient",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "wavelengths": 5,
+      "engine": "mft",
+      "seconds": 0.002598350984044373,
+      "evals_per_s": 384.85947669913503,
+      "case": "focal_gradient",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "wavelengths": 1,
+      "engine": "fft",
+      "seconds": 0.0031213570036925375,
+      "evals_per_s": 320.3734782073979,
+      "case": "focal_gradient",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "wavelengths": 5,
+      "engine": "mft",
+      "seconds": 0.0068125620018690825,
+      "evals_per_s": 146.7876548830883,
+      "case": "focal_gradient",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "wavelengths": 1,
+      "engine": "fft",
+      "seconds": 0.011433776991907507,
+      "evals_per_s": 87.46016305091229,
+      "case": "focal_gradient",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "seconds": 0.0838972850178834,
+      "iterations": 8,
+      "error_nm": 0.15428451798719872,
+      "case": "focal_lm",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.21142565400805324,
+      "iterations": 11,
+      "error_nm": 0.1570023641636995,
+      "case": "focal_lm",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "seconds": 0.3975918049982283,
+      "iterations": 6,
+      "error_nm": 0.20993390720316665,
+      "case": "focal_lm",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "iterations_per_s": 1050.809364980276,
+      "case": "gerchberg_saxton",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "iterations_per_s": 374.1268198226207,
+      "case": "gerchberg_saxton",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "iterations_per_s": 94.64381644032044,
+      "case": "gerchberg_saxton",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 32,
+      "seconds": 0.0632771190139465,
+      "estimates_per_s": 15.803500784850783,
+      "case": "lift",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "seconds": 0.06560266599990427,
+      "estimates_per_s": 15.24328294830974,
+      "case": "lift",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.08378576399991289,
+      "estimates_per_s": 11.93520178441101,
+      "case": "lift",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "seconds": 0.28473597249831073,
+      "error_nm": 0.8654136002323336,
+      "case": "phase_diversity",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.6563022060145158,
+      "error_nm": 0.05173197154440739,
+      "case": "phase_diversity",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "seconds": 0.5480850690073567,
+      "error_nm": 0.15406087689627135,
+      "case": "retrieve_auto",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.9602005284978077,
+      "error_nm": 0.16960941210205494,
+      "case": "retrieve_auto",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "method": "fft",
+      "seconds": 0.0021585850045084953,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "method": "dct",
+      "seconds": 0.005524066014913842,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 1024,
+      "method": "fft",
+      "seconds": 0.005639747017994523,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 1024,
+      "method": "dct",
+      "seconds": 0.018112898018443957,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 2048,
+      "method": "fft",
+      "seconds": 0.021260693989461288,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 2048,
+      "method": "dct",
+      "seconds": 0.06947555299848318,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.0815880180161912,
+      "case": "unwrap",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "seconds": 0.11402340698987246,
+      "case": "unwrap",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "seconds": 0.3219252990093082,
+      "case": "unwrap",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "method": "raf",
+      "seconds": 0.11903046650695615,
+      "iterations": 160,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "method": "lbfgs",
+      "seconds": 0.21907768548408058,
+      "iterations": 30,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "method": "raf",
+      "seconds": 0.11668503850523848,
+      "iterations": 150,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "method": "lbfgs",
+      "seconds": 0.20287353149615228,
+      "iterations": 30,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "method": "raf",
+      "seconds": 0.32314593299815897,
+      "iterations": 160,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "method": "lbfgs",
+      "seconds": 0.3089374625124037,
+      "iterations": 30,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    }
+  ]
+}

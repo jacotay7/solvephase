@@ -1,0 +1,288 @@
+{
+  "environment": {
+    "solvephase": "0.1.0",
+    "python": "3.13.15",
+    "platform": "Linux-6.17.9-76061709-generic-aarch64-with-glibc2.39",
+    "processor": "aarch64",
+    "cpu_count": 80,
+    "numpy": "2.5.3",
+    "timestamp": "2026-10-07T07:08:36+00:00",
+    "scipy": "1.18.1",
+    "gpu": "NVIDIA GeForce RTX 4060",
+    "cupy": "14.2.0",
+    "cuda_runtime": 12090,
+    "host": "cfl-test-bench: 80-core Ampere Neoverse-N1 (aarch64), shared",
+    "cpu_pinning": "taskset -c 16-31 (16 cores); OMP/OpenBLAS/FFT threads = 16",
+    "gpus": "NVIDIA GeForce RTX 4060 (8 GB), NVIDIA RTX A400 (4 GB); driver 580.173.02"
+  },
+  "capture_levels": [
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.7
+  ],
+  "methods": [
+    {
+      "key": "misell",
+      "label": "Gerchberg-Saxton / Misell",
+      "family": "focal-plane",
+      "data": "2+ images with known diversity",
+      "requires": "known pupil",
+      "unknowns": "zonal phase, unwrapped and fitted to a basis",
+      "seconds": 0.6054978969914373,
+      "seconds_gpu": 0.32186949701281264,
+      "error": 0.010525870689563108,
+      "error_abs": 1.6839799555150254,
+      "error_unit": "nm",
+      "iterations": 300,
+      "capture": {
+        "0.05": 1.0,
+        "0.1": 1.0,
+        "0.2": 1.0,
+        "0.3": 0.16666666666666666,
+        "0.4": 0.3333333333333333,
+        "0.5": 0.16666666666666666,
+        "0.7": 0.0
+      },
+      "trace": {
+        "times": [],
+        "errors": []
+      },
+      "extra": {}
+    },
+    {
+      "key": "lm",
+      "label": "Nonlinear ML, modal (LM)",
+      "family": "focal-plane",
+      "data": "1+ images; 2+ with diversity to fix the sign",
+      "requires": "known pupil",
+      "unknowns": "modal coefficients + flux, background, registration",
+      "seconds": 0.18697032099589705,
+      "seconds_gpu": 0.09825141800683923,
+      "error": 0.005106228168692953,
+      "error_abs": 0.8169192020277456,
+      "error_unit": "nm",
+      "iterations": 6,
+      "capture": {
+        "0.05": 1.0,
+        "0.1": 1.0,
+        "0.2": 1.0,
+        "0.3": 0.3333333333333333,
+        "0.4": 0.16666666666666666,
+        "0.5": 0.0,
+        "0.7": 0.0
+      },
+      "trace": {
+        "times": [],
+        "errors": []
+      },
+      "extra": {}
+    },
+    {
+      "key": "lbfgs",
+      "label": "Nonlinear ML, zonal (L-BFGS)",
+      "family": "focal-plane",
+      "data": "2+ images with known diversity",
+      "requires": "known pupil",
+      "unknowns": "phase per pixel (+ amplitude)",
+      "seconds": 0.6653045339917298,
+      "seconds_gpu": 1.8744644250255078,
+      "error": 0.1589518492913621,
+      "error_abs": 25.429889459321217,
+      "error_unit": "nm",
+      "iterations": 300,
+      "capture": {
+        "0.05": 0.0,
+        "0.1": 1.0,
+        "0.2": 0.3333333333333333,
+        "0.3": 0.0,
+        "0.4": 0.0,
+        "0.5": 0.0,
+        "0.7": 0.0
+      },
+      "trace": {
+        "times": [],
+        "errors": []
+      },
+      "extra": {}
+    },
+    {
+      "key": "retrieve",
+      "label": "retrieve() (robust default)",
+      "family": "focal-plane",
+      "data": "2+ images with known diversity",
+      "requires": "known pupil",
+      "unknowns": "modal (+ optional zonal refinement)",
+      "seconds": 0.8604175919899717,
+      "seconds_gpu": 0.454890371998772,
+      "error": 0.005106226280309669,
+      "error_abs": 0.8169188999150089,
+      "error_unit": "nm",
+      "iterations": 3,
+      "capture": {
+        "0.05": 1.0,
+        "0.1": 1.0,
+        "0.2": 1.0,
+        "0.3": 1.0,
+        "0.4": 0.8333333333333334,
+        "0.5": 0.5,
+        "0.7": 0.5
+      },
+      "trace": {
+        "times": [],
+        "errors": []
+      },
+      "extra": {}
+    },
+    {
+      "key": "pd",
+      "label": "Phase diversity, extended object",
+      "family": "focal-plane",
+      "data": "2+ images of the same scene with known diversity",
+      "requires": "known pupil; compact scene",
+      "unknowns": "modal coefficients + the object",
+      "seconds": 0.29611618898343295,
+      "seconds_gpu": 0.6530910670117009,
+      "error": 0.06562706370545356,
+      "error_abs": 10.499336641943728,
+      "error_unit": "nm",
+      "iterations": 119,
+      "capture": {
+        "0.05": 1.0,
+        "0.1": 0.8333333333333334,
+        "0.2": 1.0,
+        "0.3": 0.6666666666666666,
+        "0.4": 0.3333333333333333,
+        "0.5": 0.3333333333333333,
+        "0.7": 0.0
+      },
+      "trace": {
+        "times": [],
+        "errors": []
+      },
+      "extra": {}
+    },
+    {
+      "key": "lift",
+      "label": "LIFT",
+      "family": "focal-plane",
+      "data": "1 image with a known astigmatism bias",
+      "requires": "known pupil",
+      "unknowns": "~10 low-order modes",
+      "seconds": 0.0662676340143662,
+      "seconds_gpu": 0.10143513602088206,
+      "error": 0.2686901758718495,
+      "error_abs": 42.986360345529,
+      "error_unit": "nm",
+      "iterations": 12,
+      "capture": {
+        "0.05": 1.0,
+        "0.1": 1.0,
+        "0.2": 1.0,
+        "0.3": 0.6666666666666666,
+        "0.4": 0.16666666666666666,
+        "0.5": 0.0,
+        "0.7": 0.0
+      },
+      "trace": {
+        "times": [],
+        "errors": []
+      },
+      "extra": {
+        "in_model_error_nm": 6.756301510929042,
+        "n_modes": 10
+      }
+    },
+    {
+      "key": "ff",
+      "label": "Fast & Furious",
+      "family": "focal-plane",
+      "data": "1 image per step, in closed loop",
+      "requires": "a DM; small residuals; symmetric pupil",
+      "unknowns": "zonal phase (sequential)",
+      "seconds": 0.022502428153529763,
+      "seconds_gpu": 0.035019537986954674,
+      "error": 0.11888414940395173,
+      "error_abs": 19.01966407617134,
+      "error_unit": "nm",
+      "iterations": 30,
+      "capture": {
+        "0.05": 1.0,
+        "0.1": 1.0,
+        "0.2": 0.0,
+        "0.3": 0.0,
+        "0.4": 0.0,
+        "0.5": 0.0,
+        "0.7": 0.0
+      },
+      "trace": {
+        "times": [],
+        "errors": []
+      },
+      "extra": {}
+    },
+    {
+      "key": "cdi",
+      "label": "CDI: HIO\u2192ER + shrinkwrap, 8 starts",
+      "family": "imaging",
+      "data": "1 oversampled diffraction pattern",
+      "requires": "isolated object (oversampling \u2265 2)",
+      "unknowns": "complex object",
+      "seconds": 1.581951920001302,
+      "seconds_gpu": 0.29780680901603773,
+      "error": 0.0009197853412670216,
+      "error_abs": 0.0009197853412670216,
+      "error_unit": "relative",
+      "iterations": 700,
+      "capture": {},
+      "trace": {
+        "times": [],
+        "errors": []
+      },
+      "extra": {}
+    },
+    {
+      "key": "generic",
+      "label": "Generic: L-BFGS (coded diffraction, 6 masks)",
+      "family": "generic",
+      "data": "6 coded diffraction patterns",
+      "requires": "known random masks (m/n \u2273 4)",
+      "unknowns": "complex vector",
+      "seconds": 0.22192049998557195,
+      "seconds_gpu": 0.2058028259780258,
+      "error": 1.876543333502858e-08,
+      "error_abs": 1.876543333502858e-08,
+      "error_unit": "relative",
+      "iterations": 40,
+      "capture": {},
+      "trace": {
+        "times": [],
+        "errors": []
+      },
+      "extra": {}
+    },
+    {
+      "key": "tie",
+      "label": "TIE (non-uniform intensity, DCT)",
+      "family": "near-field",
+      "data": "3 intensities at \u00b1dz",
+      "requires": "weak defocus; sample inside the field",
+      "unknowns": "phase map",
+      "seconds": 0.004973458999302238,
+      "seconds_gpu": 0.004885978007223457,
+      "error": 0.044832407811043105,
+      "error_abs": 0.044832407811043105,
+      "error_unit": "relative",
+      "iterations": 1,
+      "capture": {},
+      "trace": {
+        "times": [],
+        "errors": []
+      },
+      "extra": {}
+    }
+  ]
+}

@@ -1,0 +1,803 @@
+{
+  "environment": {
+    "solvephase": "0.1.0",
+    "python": "3.13.15",
+    "platform": "Linux-6.17.9-76061709-generic-aarch64-with-glibc2.39",
+    "processor": "aarch64",
+    "cpu_count": 80,
+    "numpy": "2.5.3",
+    "timestamp": "2026-10-07T06:57:38+00:00",
+    "scipy": "1.18.1",
+    "gpu": "NVIDIA GeForce RTX 4060",
+    "cupy": "14.2.0",
+    "cuda_runtime": 12090,
+    "host": "cfl-test-bench: 80-core Ampere Neoverse-N1 (aarch64), shared",
+    "cpu_pinning": "taskset -c 16-31 (16 cores); OMP/OpenBLAS/FFT threads = 16",
+    "gpus": "NVIDIA GeForce RTX 4060 (8 GB), NVIDIA RTX A400 (4 GB); driver 580.173.02"
+  },
+  "quick": false,
+  "results": [
+    {
+      "size": 256,
+      "algorithm": "hio",
+      "starts": 1,
+      "iterations_per_s": 369.586951430157,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "algorithm": "hio",
+      "starts": 16,
+      "iterations_per_s": 558.5796651364209,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "algorithm": "raar",
+      "starts": 1,
+      "iterations_per_s": 458.40334582323237,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "algorithm": "raar",
+      "starts": 16,
+      "iterations_per_s": 521.4686400049563,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "algorithm": "hio",
+      "starts": 1,
+      "iterations_per_s": 148.39644353732,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "algorithm": "hio",
+      "starts": 16,
+      "iterations_per_s": 119.51432558359438,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "algorithm": "raar",
+      "starts": 1,
+      "iterations_per_s": 132.2467476820825,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "algorithm": "raar",
+      "starts": 16,
+      "iterations_per_s": 105.15541591837356,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 1024,
+      "algorithm": "hio",
+      "starts": 1,
+      "iterations_per_s": 33.527718697795336,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 1024,
+      "algorithm": "raar",
+      "starts": 1,
+      "iterations_per_s": 30.450809011161386,
+      "case": "cdi",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 64,
+      "seconds": 0.0007462289941031486,
+      "steps_per_s": 1340.071221973685,
+      "case": "fast_furious",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "seconds": 0.0025845109921647236,
+      "steps_per_s": 386.92038959463827,
+      "case": "fast_furious",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "seconds": 0.005969332007225603,
+      "steps_per_s": 167.52293201141197,
+      "case": "fast_furious",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "wavelengths": 1,
+      "engine": "fft",
+      "seconds": 0.004841458023292944,
+      "evals_per_s": 206.54934839646603,
+      "case": "focal_gradient",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "wavelengths": 5,
+      "engine": "mft",
+      "seconds": 0.013840605999575928,
+      "evals_per_s": 72.251171663339,
+      "case": "focal_gradient",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "wavelengths": 1,
+      "engine": "fft",
+      "seconds": 0.01598571101203561,
+      "evals_per_s": 62.555866251247885,
+      "case": "focal_gradient",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "wavelengths": 5,
+      "engine": "mft",
+      "seconds": 0.059798997011967,
+      "evals_per_s": 16.72268850596072,
+      "case": "focal_gradient",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "wavelengths": 1,
+      "engine": "fft",
+      "seconds": 0.07753176899859682,
+      "evals_per_s": 12.897938650388568,
+      "case": "focal_gradient",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 64,
+      "seconds": 0.14144125499296933,
+      "iterations": 6,
+      "error_nm": 0.15428619389054313,
+      "case": "focal_lm",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "seconds": 0.5982346099917777,
+      "iterations": 6,
+      "error_nm": 0.15700733822183244,
+      "case": "focal_lm",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "seconds": 1.8716758319933433,
+      "iterations": 6,
+      "error_nm": 0.20996287695042726,
+      "case": "focal_lm",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "iterations_per_s": 134.30972492559334,
+      "case": "gerchberg_saxton",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "iterations_per_s": 34.71132033659785,
+      "case": "gerchberg_saxton",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "iterations_per_s": 7.71112260128236,
+      "case": "gerchberg_saxton",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 32,
+      "seconds": 0.010951091011520475,
+      "estimates_per_s": 91.31510266401828,
+      "case": "lift",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 64,
+      "seconds": 0.027223046985454857,
+      "estimates_per_s": 36.73358094464206,
+      "case": "lift",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "seconds": 0.08345183997880667,
+      "estimates_per_s": 11.982959276319836,
+      "case": "lift",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 64,
+      "seconds": 0.10236834699753672,
+      "error_nm": 0.8659183320259046,
+      "case": "phase_diversity",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "seconds": 0.39666447398485616,
+      "error_nm": 0.051974064185446006,
+      "case": "phase_diversity",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 64,
+      "seconds": 1.0044425384985516,
+      "error_nm": 0.15405938953323578,
+      "case": "retrieve_auto",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "seconds": 4.23363272100687,
+      "error_nm": 0.1695821922244775,
+      "case": "retrieve_auto",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "method": "fft",
+      "seconds": 0.015530786011368036,
+      "case": "tie",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "method": "dct",
+      "seconds": 0.01897770698997192,
+      "case": "tie",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 1024,
+      "method": "fft",
+      "seconds": 0.06475361599586904,
+      "case": "tie",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 1024,
+      "method": "dct",
+      "seconds": 0.07119241301552393,
+      "case": "tie",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 2048,
+      "method": "fft",
+      "seconds": 0.22512541801552288,
+      "case": "tie",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 2048,
+      "method": "dct",
+      "seconds": 0.2323784249892924,
+      "case": "tie",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "seconds": 0.0354615050018765,
+      "case": "unwrap",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "seconds": 0.13019648002227768,
+      "case": "unwrap",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 512,
+      "seconds": 0.48210701800417155,
+      "case": "unwrap",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 64,
+      "method": "raf",
+      "seconds": 0.2617183965048753,
+      "iterations": 160,
+      "case": "wirtinger",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 64,
+      "method": "lbfgs",
+      "seconds": 0.2044653905031737,
+      "iterations": 40,
+      "case": "wirtinger",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "method": "raf",
+      "seconds": 0.7315687280060956,
+      "iterations": 150,
+      "case": "wirtinger",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 128,
+      "method": "lbfgs",
+      "seconds": 0.5457112605072325,
+      "iterations": 30,
+      "case": "wirtinger",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "method": "raf",
+      "seconds": 2.7887069630087353,
+      "iterations": 160,
+      "case": "wirtinger",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "method": "lbfgs",
+      "seconds": 1.8881144894985482,
+      "iterations": 30,
+      "case": "wirtinger",
+      "device": "cpu",
+      "precision": "double"
+    },
+    {
+      "size": 256,
+      "algorithm": "hio",
+      "starts": 1,
+      "iterations_per_s": 2638.6216358567794,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "algorithm": "hio",
+      "starts": 16,
+      "iterations_per_s": 34721.95697683464,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "algorithm": "raar",
+      "starts": 1,
+      "iterations_per_s": 2555.7388094071207,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "algorithm": "raar",
+      "starts": 16,
+      "iterations_per_s": 24049.82268989286,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "algorithm": "hio",
+      "starts": 1,
+      "iterations_per_s": 2464.1681613252463,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "algorithm": "hio",
+      "starts": 16,
+      "iterations_per_s": 3668.0184018643927,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "algorithm": "raar",
+      "starts": 1,
+      "iterations_per_s": 2394.066105065067,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "algorithm": "raar",
+      "starts": 16,
+      "iterations_per_s": 3045.951519602045,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 1024,
+      "algorithm": "hio",
+      "starts": 1,
+      "iterations_per_s": 1854.0806626330127,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 1024,
+      "algorithm": "raar",
+      "starts": 1,
+      "iterations_per_s": 1361.2709696525092,
+      "case": "cdi",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "seconds": 0.0013401159812929109,
+      "steps_per_s": 746.2040703635402,
+      "case": "fast_furious",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.0014753775030840188,
+      "steps_per_s": 677.7926313161714,
+      "case": "fast_furious",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "seconds": 0.0014366974937729537,
+      "steps_per_s": 696.0407492421181,
+      "case": "fast_furious",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "wavelengths": 1,
+      "engine": "fft",
+      "seconds": 0.0021767459984403104,
+      "evals_per_s": 459.4013268964424,
+      "case": "focal_gradient",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "wavelengths": 5,
+      "engine": "mft",
+      "seconds": 0.00257691100705415,
+      "evals_per_s": 388.0615191066187,
+      "case": "focal_gradient",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "wavelengths": 1,
+      "engine": "fft",
+      "seconds": 0.0021974660048726946,
+      "evals_per_s": 455.06961098946914,
+      "case": "focal_gradient",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "wavelengths": 5,
+      "engine": "mft",
+      "seconds": 0.0025373510143253952,
+      "evals_per_s": 394.11180966062346,
+      "case": "focal_gradient",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "wavelengths": 1,
+      "engine": "fft",
+      "seconds": 0.002366229018662125,
+      "evals_per_s": 422.61336164552824,
+      "case": "focal_gradient",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "seconds": 0.06740724801784381,
+      "iterations": 8,
+      "error_nm": 0.15428451798719872,
+      "case": "focal_lm",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.06344580100267194,
+      "iterations": 6,
+      "error_nm": 0.15700015519862953,
+      "case": "focal_lm",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "seconds": 0.2193458690016996,
+      "iterations": 11,
+      "error_nm": 0.2099343139292054,
+      "case": "focal_lm",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "iterations_per_s": 1065.9607561846929,
+      "case": "gerchberg_saxton",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "iterations_per_s": 884.1189223172962,
+      "case": "gerchberg_saxton",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "iterations_per_s": 266.4578077744255,
+      "case": "gerchberg_saxton",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 32,
+      "seconds": 0.06983827697695233,
+      "estimates_per_s": 14.318795412578906,
+      "case": "lift",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "seconds": 0.06435341099859215,
+      "estimates_per_s": 15.539191854521539,
+      "case": "lift",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.06742120799026452,
+      "estimates_per_s": 14.832128195395104,
+      "case": "lift",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "seconds": 0.36109670749283396,
+      "error_nm": 0.8657117385421517,
+      "case": "phase_diversity",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.49092050398758147,
+      "error_nm": 0.05243971547787181,
+      "case": "phase_diversity",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "seconds": 0.5688822779920883,
+      "error_nm": 0.15406087689627135,
+      "case": "retrieve_auto",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.6061234444932779,
+      "error_nm": 0.16960980593862213,
+      "case": "retrieve_auto",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "method": "fft",
+      "seconds": 0.0019082229991909117,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "method": "dct",
+      "seconds": 0.004477694019442424,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 1024,
+      "method": "fft",
+      "seconds": 0.0019158229988534003,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 1024,
+      "method": "dct",
+      "seconds": 0.004545813979348168,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 2048,
+      "method": "fft",
+      "seconds": 0.00665152000146918,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 2048,
+      "method": "dct",
+      "seconds": 0.02545458500389941,
+      "case": "tie",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "seconds": 0.07927863000077195,
+      "case": "unwrap",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "seconds": 0.10517614101991057,
+      "case": "unwrap",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 512,
+      "seconds": 0.16384532398660667,
+      "case": "unwrap",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "method": "raf",
+      "seconds": 0.11857894099375699,
+      "iterations": 160,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 64,
+      "method": "lbfgs",
+      "seconds": 0.21879212200292386,
+      "iterations": 40,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "method": "raf",
+      "seconds": 0.1176333499897737,
+      "iterations": 150,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 128,
+      "method": "lbfgs",
+      "seconds": 0.19903574549243785,
+      "iterations": 30,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "method": "raf",
+      "seconds": 0.12872070301091298,
+      "iterations": 160,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    },
+    {
+      "size": 256,
+      "method": "lbfgs",
+      "seconds": 0.20866950100753456,
+      "iterations": 30,
+      "case": "wirtinger",
+      "device": "gpu",
+      "precision": "single"
+    }
+  ]
+}

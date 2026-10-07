@@ -56,6 +56,7 @@ from typing import Any
 
 import numpy as np
 
+from .. import _kernels
 from ..backend import Backend, BackendLike, get_backend
 from ..basis import Basis
 from ..focal import FocalPlaneModel
@@ -237,10 +238,31 @@ class FastAndFurious:
         if tuple(p.shape) != self.image_shape:
             raise ValueError(f"image shape {tuple(p.shape)} does not match {self.image_shape}")
         total = xp.sum(p)
+        if self._fused(p):
+            # One kernel after the two reductions. max(c p) == c max(p) exactly for
+            # c > 0 (rounding is monotonic), so the peak is taken before scaling.
+            rdt = self.backend.real_dtype.type
+            if self.strehl_compensation:
+                return _kernels.call(
+                    "ff_normalize",
+                    p,
+                    total,
+                    xp.max(p),
+                    rdt(self._sum_a2),
+                    rdt(self._max_a2),
+                    self._a2,
+                )
+            return _kernels.call("ff_normalize_plain", p, total, rdt(self._sum_a2))
         p = p * (self._sum_a2 / xp.where(total > 0, total, 1.0))
         if self.strehl_compensation:
             p = p + (1.0 - xp.max(p) / self._max_a2) * self._a2
         return p
+
+    def _fused(self, p: Any) -> bool:
+        """Whether the fused GPU kernels apply (contiguous working-precision image)."""
+        return bool(
+            self.backend.is_gpu and p.dtype == self.backend.real_dtype and p.flags.c_contiguous
+        )
 
     def _pupil_opd(self, focal: Any) -> Any:
         """OPD in metres from the focal field ``F{A phi}`` (one inverse FFT, divide by ``A``)."""
@@ -271,6 +293,8 @@ class FastAndFurious:
         """
         xp = self.backend.xp
         p = self._normalize(image)
+        if self._fused(p):
+            return self._step_fused(p, dm_change_opd)
         p_flip = p[::-1, ::-1]
         p_even = 0.5 * (p + p_flip)
         p_odd = 0.5 * (p - p_flip)
@@ -282,19 +306,7 @@ class FastAndFurious:
         elif dm_change_opd is None:
             v = xp.zeros_like(v_abs)
         else:
-            change = self.backend.asarray(dm_change_opd, dtype="real")
-            if tuple(change.shape) != self.pupil.shape:
-                raise ValueError(
-                    f"dm_change_opd shape {tuple(change.shape)} does not match the pupil "
-                    f"{self.pupil.shape}"
-                )
-            # Previous frame relative to this one: phi_d = -k * change.
-            div = (
-                self.propagator.forward(
-                    (self._amp * (-self._k) * change).astype(self.backend.complex_dtype)
-                )
-                * self._scale
-            )
+            div = self._change_field(dm_change_opd)
             v_d, y_d = div.real, div.imag
             diff = self._prev_even - p_even - v_d * v_d - y_d * y_d - 2.0 * y * y_d
             v = v_abs * xp.sign(diff * v_d)
@@ -306,6 +318,47 @@ class FastAndFurious:
         opd_flip = opd[::-1, ::-1]
         self.last_odd_opd = 0.5 * (opd - opd_flip)
         self.last_even_opd = 0.5 * (opd + opd_flip)
+        return opd
+
+    def _change_field(self, dm_change_opd: Any) -> Any:
+        """Normalized focal field of the previous frame's phase relative to this one."""
+        change = self.backend.asarray(dm_change_opd, dtype="real")
+        if tuple(change.shape) != self.pupil.shape:
+            raise ValueError(
+                f"dm_change_opd shape {tuple(change.shape)} does not match the pupil "
+                f"{self.pupil.shape}"
+            )
+        # Previous frame relative to this one: phi_d = -k * change.
+        be = self.backend
+        if be.is_gpu and change.flags.c_contiguous:
+            field = be.empty(self.pupil.shape, dtype="complex")
+            _kernels.call("ff_change", self._amp, be.real_dtype.type(-self._k), change, field)
+        else:
+            field = (self._amp * (-self._k) * change).astype(be.complex_dtype)
+        return self.propagator.forward(field) * self._scale
+
+    def _step_fused(self, p: Any, dm_change_opd: Any) -> Any:
+        """:meth:`step` on the GPU in five fused kernels plus the FFTs (same arithmetic)."""
+        xp = self.backend.xp
+        rdt = self.backend.real_dtype.type
+        p_even, y, v_abs = _kernels.call("ff_parts", p, self._a, self._a2, self._y_den)
+        if self._prev_even is None or dm_change_opd is None:
+            # First frame: v = |v| (or 0 without first_even); no DM change: v = 0.
+            first = self._prev_even is None
+            sign = rdt(1.0 if first and self.first_even else 0.0)
+            field = xp.empty(p.shape, dtype=self.backend.complex_dtype)
+            _kernels.call("ff_field", v_abs if first else rdt(0.0), sign, y, self._window, field)
+        else:
+            div = self._change_field(dm_change_opd)
+            field = _kernels.call(
+                "ff_field_signed", v_abs, y, self._window, self._prev_even, p_even, div
+            )
+        self._prev_even = p_even
+        self.n_steps += 1
+        a_phi = self.propagator.adjoint(field)
+        opd, odd, even = (xp.empty(self.pupil.shape, dtype=p.dtype) for _ in range(3))
+        _kernels.call("ff_opd", a_phi, self._inv_amp, opd, odd, even)
+        self.last_odd_opd, self.last_even_opd = odd, even
         return opd
 
 

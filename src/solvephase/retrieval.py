@@ -218,6 +218,9 @@ class FocalPlaneProblem:
             else np.broadcast_to(np.asarray(flux, dtype=np.float64), (k,)).copy()
         )
         self._flux0: np.ndarray | None = None
+        # Device copies of the small host vectors above, refreshed when their values change.
+        self._device_cache: dict[str, tuple[np.ndarray, Any]] = {}
+        self._mode_maps: Any = None
 
         n_c = self.basis.n_modes
         n_a = pupil.n_valid if self.fit_amplitude else 0
@@ -283,17 +286,29 @@ class FocalPlaneProblem:
         tilt_maps = xp.tensordot(t, self._ramps, axes=(1, 0))  # (K, ny, nx)
         return phase[None] + tilt_maps
 
+    def _on_device(self, name: str, host: np.ndarray) -> Any:
+        """``backend.asarray(host, dtype="real")``, cached while ``host`` keeps its values.
+
+        Saves a host-to-device copy (a synchronizing transfer on the GPU) per
+        objective evaluation; the comparison costs a few microseconds.
+        """
+        cached = self._device_cache.get(name)
+        if cached is None or not np.array_equal(cached[0], host):
+            cached = (np.array(host, copy=True), self.backend.asarray(host, dtype="real"))
+            self._device_cache[name] = cached
+        return cached[1]
+
     def _flux_background(self, x: Any, psf: Any) -> tuple[Any, Any]:
-        be, xp = self.backend, self.backend.xp
+        xp = self.backend.xp
         if self._flux0 is None:
             self._init_flux(psf)
         assert self._flux0 is not None
-        flux = be.asarray(self._flux0, dtype="real")
+        flux = self._on_device("flux0", self._flux0)
         if self.fit_flux:
             flux = flux * xp.exp(x[self.layout.log_flux])
-        bg = be.asarray(self._bg0, dtype="real")
+        bg = self._on_device("bg0", self._bg0)
         if self.fit_background:
-            bg = bg + be.asarray(self._scale, dtype="real") * x[self.layout.background]
+            bg = bg + self._on_device("scale", self._scale) * x[self.layout.background]
         return flux, bg
 
     def _init_flux(self, psf: Any) -> None:
@@ -394,11 +409,14 @@ class FocalPlaneProblem:
         return state, flux, bg, model
 
     def _loss(self, model: Any) -> tuple[Any, Any, Any]:
-        """Data term in float64; gradient and curvature in working precision."""
+        """Data term in float64; gradient in working precision."""
+        rdt = self.backend.real_dtype
+        fused = self.loss._evaluate_fused(self.backend, model, self._data64, self._weights64, rdt)
+        if fused is not None:
+            return fused
         val, grad, curv = self.loss.evaluate(
             self.backend, model.astype(np.float64), self._data64, self._weights64
         )
-        rdt = self.backend.real_dtype
         return val, grad.astype(rdt, copy=False), curv
 
     def value(self, x: Any) -> float:
@@ -417,21 +435,21 @@ class FocalPlaneProblem:
         xp = self.backend.xp
         state, flux, _, model = self._model_images(x)
         val, g_model, _ = self._loss(model)
-        grad = xp.zeros_like(x)
         g_psf = g_model * flux[:, None, None]
         g_phase, g_amp = self.model.vjp(state, g_psf, amplitude=self.fit_amplitude)
-        grad[self.layout.coeffs] = self._analyze(xp.sum(g_phase, axis=0))
+        # Blocks in layout order, joined by one concatenate (not zeros + one scatter each).
+        parts = [self._analyze(xp.sum(g_phase, axis=0))]
         if self.fit_amplitude:
-            grad[self.layout.amplitude] = self._amp_scale * g_amp.reshape(-1)[self._flat_index]
+            parts.append(self._amp_scale * g_amp.reshape(-1)[self._flat_index])
         if self.fit_tilt:
             gt = xp.tensordot(g_phase[1:], self._ramps, axes=([1, 2], [1, 2]))
-            grad[self.layout.tilts] = gt.reshape(-1)
+            parts.append(gt.reshape(-1))
         if self.fit_flux:
-            grad[self.layout.log_flux] = flux * xp.sum(g_model * state.images, axis=(1, 2))
+            parts.append(flux * xp.sum(g_model * state.images, axis=(1, 2)))
         if self.fit_background:
-            grad[self.layout.background] = self.backend.asarray(self._scale, dtype="real") * xp.sum(
-                g_model, axis=(1, 2)
-            )
+            scale = self._on_device("scale", self._scale)
+            parts.append(scale * xp.sum(g_model, axis=(1, 2)))
+        grad = xp.concatenate([p.astype(x.dtype, copy=False) for p in parts])
         value = float(val)
         if self._has_reg:
             reg_val, reg_grad = self._regularization(x)
@@ -463,10 +481,14 @@ class FocalPlaneProblem:
         assert self._modes is not None
         if chunk is None:
             chunk = self._jacobian_chunk()
+        maps = self._direction_maps()
         for start in range(0, n_c, chunk):
             stop = min(start + chunk, n_c)
-            dirs = xp.zeros(((stop - start), ny * nx), dtype=be.real_dtype)
-            dirs[:, self._flat_index] = self._modes[start:stop]
+            if maps is not None:
+                dirs = maps[start:stop]
+            else:
+                dirs = xp.zeros(((stop - start), ny * nx), dtype=be.real_dtype)
+                dirs[:, self._flat_index] = self._modes[start:stop]
             d_img = self.model.jvp(state, dirs.reshape(-1, ny, nx))  # (P, K, my, mx)
             rows.append((d_img * flux[None, :, None, None]).reshape(stop - start, k * npix))
         if self.fit_tilt:
@@ -475,21 +497,20 @@ class FocalPlaneProblem:
                 dirs[2 * (c - 1) : 2 * c, c] = self._ramps
             d_img = self.model.jvp(state, dirs, per_channel=True)
             rows.append((d_img * flux[None, :, None, None]).reshape(-1, k * npix))
+        diag = xp.arange(k)
         if self.fit_flux:
             block = xp.zeros((k, k, npix), dtype=be.real_dtype)
-            for c in range(k):
-                block[c, c] = flux[c] * state.images[c].reshape(-1)
+            block[diag, diag] = flux[:, None] * state.images.reshape(k, npix)
             rows.append(block.reshape(k, k * npix))
         if self.fit_background:
             block = xp.zeros((k, k, npix), dtype=be.real_dtype)
-            scale = be.asarray(self._scale, dtype="real")
-            for c in range(k):
-                block[c, c] = scale[c]
+            block[diag, diag] = self._on_device("scale", self._scale)[:, None]
             rows.append(block.reshape(k, k * npix))
         # Propagation runs in working precision, but the normal equations are
         # accumulated in float64: near the optimum J^T g is a sum of large,
-        # cancelling terms that float32 cannot resolve.
-        jac = xp.concatenate(rows, axis=0).astype(np.float64)
+        # cancelling terms that float32 cannot resolve. Concatenating straight
+        # into float64 saves a pass over the Jacobian.
+        jac = xp.concatenate(rows, axis=0, dtype=np.float64)
         h = curv.reshape(-1).astype(np.float64)
         with be.blas_limit(float(jac.shape[0]) ** 2 * jac.shape[1]):
             hess = (jac * h[None, :]) @ jac.T
@@ -506,6 +527,24 @@ class FocalPlaneProblem:
                 diag[self.layout.coeffs] += self._inv_var
             hess = hess + xp.diag(diag)
         return value, grad, hess
+
+    def _direction_maps(self, budget_bytes: float = 64e6) -> Any:
+        """Mode maps ``(n_modes, ny * nx)`` (zero off the pupil), built once, or ``None``.
+
+        They are the forward-mode directions of every Gauss-Newton matrix;
+        caching them saves a zero-fill and a scatter per batch. ``None`` when
+        they would take more than ``budget_bytes`` (built per batch instead).
+        """
+        if self._mode_maps is None:
+            assert self._modes is not None
+            ny, nx = self.model.pupil.shape
+            size = self.basis.n_modes * ny * nx * self.backend.real_dtype.itemsize
+            if size > budget_bytes:
+                return None
+            maps = self.backend.zeros((self.basis.n_modes, ny * nx))
+            maps[:, self._flat_index] = self._modes
+            self._mode_maps = maps
+        return self._mode_maps
 
     def _jacobian_chunk(self, budget_bytes: float = 64e6) -> int:
         """Directions per forward-mode batch so one batch's fields fit ``budget_bytes``."""

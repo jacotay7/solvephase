@@ -18,6 +18,7 @@ from typing import Any
 
 import numpy as np
 
+from . import _kernels
 from .backend import Backend
 
 __all__ = ["AmplitudeLoss", "GaussianLoss", "Loss", "PoissonLoss", "make_loss"]
@@ -34,8 +35,33 @@ class Loss(ABC):
     ) -> tuple[Any, Any, Any]:
         """Return ``(value, d value / d model, curvature)`` on the backend."""
 
+    def _evaluate_fused(
+        self, backend: Backend, model: Any, data: Any, weights: Any, grad_dtype: Any
+    ) -> tuple[Any, Any, Any] | None:
+        """:meth:`evaluate` as one fused GPU kernel, or ``None`` when none applies.
+
+        ``model`` is in working precision and is evaluated in float64 like
+        ``evaluate(backend, model.astype(float64), data, weights)``; ``data``
+        and ``weights`` are float64 arrays of the model's shape. The gradient
+        comes back as ``grad_dtype``.
+        """
+        return None
+
     def __repr__(self) -> str:
         return f"{type(self).__name__}()"
+
+
+def _fusable(
+    loss: Loss, cls: type[Loss], backend: Backend, model: Any, data: Any, weights: Any
+) -> bool:
+    """Whether the fused kernel of ``cls`` reproduces ``loss.evaluate`` for these arrays."""
+    return (
+        backend.is_gpu
+        and type(loss).evaluate is cls.evaluate  # a subclass may override evaluate
+        and data.dtype == weights.dtype == np.float64
+        and model.dtype.kind == "f"
+        and model.shape == data.shape == weights.shape
+    )
 
 
 class GaussianLoss(Loss):
@@ -55,6 +81,17 @@ class GaussianLoss(Loss):
         wr = weights * resid
         value = 0.5 * xp.sum(wr * resid, dtype=np.float64)
         return value, wr, xp.broadcast_to(weights, model.shape)
+
+    def _evaluate_fused(
+        self, backend: Backend, model: Any, data: Any, weights: Any, grad_dtype: Any
+    ) -> tuple[Any, Any, Any] | None:
+        if not _fusable(self, GaussianLoss, backend, model, data, weights):
+            return None
+        xp = backend.xp
+        term = xp.empty(model.shape, dtype=np.float64)
+        grad = xp.empty(model.shape, dtype=grad_dtype)
+        _kernels.call("gaussian", model, data, weights, term, grad)
+        return 0.5 * xp.sum(term, dtype=np.float64), grad, weights
 
 
 def _floor(xp: Any, data: Any, floor: float | None) -> Any:
@@ -110,11 +147,29 @@ class PoissonLoss(Loss):
         f = (m - d) + d * xp.log(ratio)
         g = 1.0 - d / m
         below = t < m0
+        if not backend.is_gpu and not below.any():
+            # Nothing below the floor (the usual case): delta = 0 and the Taylor
+            # terms vanish exactly, so skip their seven full-size operations.
+            return xp.sum(weights * f, dtype=np.float64), weights * g, weights / m
         h2 = d / (m * m)
         delta = xp.where(below, t - m0, 0.0)
         value = xp.sum(weights * (f + delta * (g + 0.5 * h2 * delta)), dtype=np.float64)
         grad = weights * (g + h2 * delta)
         return value, grad, weights / m
+
+    def _evaluate_fused(
+        self, backend: Backend, model: Any, data: Any, weights: Any, grad_dtype: Any
+    ) -> tuple[Any, Any, Any] | None:
+        if not _fusable(self, PoissonLoss, backend, model, data, weights):
+            return None
+        xp = backend.xp
+        shift = self.read_noise**2
+        m0 = _kernels.loss_floor(data, shift) if self.floor is None else self.floor
+        term = xp.empty(model.shape, dtype=np.float64)
+        grad = xp.empty(model.shape, dtype=grad_dtype)
+        curv = xp.empty(model.shape, dtype=np.float64)
+        _kernels.call("poisson", model, data, weights, shift, m0, term, grad, curv)
+        return xp.sum(term, dtype=np.float64), grad, curv
 
     def __repr__(self) -> str:
         return f"PoissonLoss(read_noise={self.read_noise:g})"
@@ -148,11 +203,28 @@ class AmplitudeLoss(Loss):
         resid = sm - sd
         f = 0.5 * resid * resid
         g = resid / (2.0 * sm)
+        below = model < m0
+        if not backend.is_gpu and not below.any():
+            # As in PoissonLoss: without pixels below the floor the Taylor terms vanish.
+            return xp.sum(weights * f, dtype=np.float64), weights * g, weights / (4.0 * m)
         h2 = sd / (4.0 * m * sm)
-        delta = xp.where(model < m0, model - m0, 0.0)
+        delta = xp.where(below, model - m0, 0.0)
         value = xp.sum(weights * (f + delta * (g + 0.5 * h2 * delta)), dtype=np.float64)
         grad = weights * (g + h2 * delta)
         return value, grad, weights / (4.0 * m)
+
+    def _evaluate_fused(
+        self, backend: Backend, model: Any, data: Any, weights: Any, grad_dtype: Any
+    ) -> tuple[Any, Any, Any] | None:
+        if not _fusable(self, AmplitudeLoss, backend, model, data, weights):
+            return None
+        xp = backend.xp
+        m0 = _kernels.loss_floor(data, 0.0) if self.floor is None else self.floor
+        term = xp.empty(model.shape, dtype=np.float64)
+        grad = xp.empty(model.shape, dtype=grad_dtype)
+        curv = xp.empty(model.shape, dtype=np.float64)
+        _kernels.call("amplitude", model, data, weights, m0, term, grad, curv)
+        return xp.sum(term, dtype=np.float64), grad, curv
 
 
 def make_loss(loss: str | Loss, **kwargs: Any) -> Loss:

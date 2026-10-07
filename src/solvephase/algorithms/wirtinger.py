@@ -65,6 +65,7 @@ from typing import Any
 
 import numpy as np
 
+from .. import _kernels
 from ..backend import Backend, backend_of, to_numpy
 from ..operators import LinearOperator, _norm
 from ..optimize import lbfgs
@@ -178,7 +179,7 @@ def relative_error(x: Any, truth: Any) -> float:
     c = complex(xp.sum(xp.conj(t) * a))
     phase = c / abs(c) if c != 0 else 1.0
     d = a - phase * t
-    return math.sqrt(be.dot(d, d) / max(be.dot(t, t), 1e-300))
+    return math.sqrt(_kernels.dot(be, d, d) / max(_kernels.dot(be, t, t), 1e-300))
 
 
 def _abs2(u: Any) -> Any:
@@ -225,7 +226,7 @@ class _Model:
         self.root = math.sqrt(self.scale)
         self.y = y * self.scale
         self.psi = psi * self.root
-        self.psi_norm = math.sqrt(be.dot(self.psi, self.psi))
+        self.psi_norm = math.sqrt(_kernels.dot(be, self.psi, self.psi))
         if not self.psi_norm > 0:
             raise ValueError("all measurements are zero: the signal is zero or unobservable")
         # ||x||^2 estimate: E y_k = ||x||^2 in the Gaussian convention.
@@ -286,7 +287,7 @@ def _power(
         if shift:
             w = w + shift * v
         if it % check_every == 0 or it == iterations:
-            value = be.dot(v, w)
+            value = _kernels.dot(be, v, w)
             if previous is not None and abs(value - previous) <= tol * abs(value):
                 return w / _norm(be, w), value
             previous = value
@@ -678,11 +679,11 @@ def _run_lbfgs(
         if amplitude:
             au, v = _amplitude_residual(model, u)
             d = au - model.psi
-            f = (0.5 * inv_m) * be.dot(d, d)
+            f = (0.5 * inv_m) * _kernels.dot(be, d, d)
             g = model.adjoint(v) * inv_m
         else:
             d = _abs2(u) - model.y
-            f = (0.25 * inv_m) * be.dot(d, d)
+            f = (0.25 * inv_m) * _kernels.dot(be, d, d)
             g = model.adjoint(d * u) * inv_m
         return f, xp.ascontiguousarray(g).view(rdt)
 
@@ -840,7 +841,7 @@ def wirtinger(
         )
     else:
         if method == "wf":
-            norm0_sq = be.dot(z, z) or model.norm0**2
+            norm0_sq = _kernels.dot(be, z, z) or model.norm0**2
             stepper = _wf_step(model, opts, norm0_sq)
         elif method == "twf":
             stepper = _twf_step(model, opts)

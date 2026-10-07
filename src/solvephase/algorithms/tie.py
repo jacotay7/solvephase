@@ -61,6 +61,7 @@ from typing import Any, Literal
 
 import numpy as np
 
+from .. import _kernels
 from ..backend import Backend, BackendLike, _cpu_workers, backend_of, get_backend, to_numpy
 from ..propagation import AngularSpectrumPropagator
 
@@ -431,23 +432,23 @@ def _solve_pcg(
 
     phi = be.zeros(b.shape)
     history: list[float] = []
-    b_norm = math.sqrt(be.dot(b, b))
+    b_norm = math.sqrt(_kernels.dot(be, b, b))
     if b_norm == 0.0:
         return phi, history, 0, True, "zero right-hand side"
     r = b.copy()
     z = precond(r)
     p = z.copy()
-    rz = be.dot(r, z)
+    rz = _kernels.dot(be, r, z)
     converged = False
     message = f"reached max_iter={max_iter}"
     n_iter = 0
     while n_iter < max_iter:
         n_iter += 1
         ap = apply_a(p)
-        pap = be.dot(p, ap)
+        pap = _kernels.dot(be, p, ap)
         if not pap > 0:
             # Only round-off is left (the operator is positive semi-definite).
-            rel = math.sqrt(be.dot(r, r)) / b_norm
+            rel = math.sqrt(_kernels.dot(be, r, r)) / b_norm
             history.append(rel)
             converged = rel <= tol
             message = f"stagnated at relative residual {rel:.2e} (round-off)"
@@ -456,16 +457,16 @@ def _solve_pcg(
         phi += alpha * p
         r -= alpha * ap
         if n_iter % check_every == 0 or n_iter == max_iter:
-            rel = math.sqrt(be.dot(r, r)) / b_norm
+            rel = math.sqrt(_kernels.dot(be, r, r)) / b_norm
             history.append(rel)
             if rel <= tol:
                 converged = True
                 message = f"relative residual {rel:.2e} <= tol"
                 break
         z = precond(r)
-        rz_new = be.dot(r, z)
+        rz_new = _kernels.dot(be, r, z)
         if not rz_new > 0:
-            rel = math.sqrt(be.dot(r, r)) / b_norm
+            rel = math.sqrt(_kernels.dot(be, r, r)) / b_norm
             history.append(rel)
             converged = rel <= tol
             message = f"preconditioned residual vanished at relative residual {rel:.2e}"

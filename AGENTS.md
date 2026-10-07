@@ -50,6 +50,7 @@ src/solvephase/
   unwrap.py         re-exports aocore.unwrap (unwrap_phase, wrap)
   metrics.py        re-exports aocore.metrics (rms, wavefront_error, strehl_from_rms)
   result.py         Result returned by every focal-plane solver
+  _kernels.py       fused CuPy kernels for the GPU hot paths (same arithmetic as the xp code)
   algorithms/       one module per algorithm family (gerchberg_saxton, cdi, ...)
   api.py            retrieve(): the one-call high-level entry point
 tests/              pytest; mirrors the module names
@@ -215,6 +216,27 @@ note the GPU and CuPy version when you report GPU results.
   is not a package).
 - GPU timings on a shared device (or CPU timings under load) vary 2-5x;
   record the load and hardware with any performance claim.
+- Small GPU problems are bound by the host: each CuPy operation costs
+  15-30 us of Python and launch overhead on the Arm bench, whatever the
+  array size. Fuse elementwise chains in `_kernels.py`, keep the exact
+  expression order, and compile with `--fmad=false` so results match the
+  unfused CuPy chain to the bit. Products of two complex arrays are the
+  exception: write them as thrust complex products compiled with default
+  flags (as CuPy's own multiply kernel is). Inlining a conjugate into a
+  product (`a * conj(b)`) or summing with a custom `ReductionKernel` changes
+  the rounding; keep `cupy.sum` for sums. `cupy.vdot` of real vectors
+  rounds exactly like `(a * b).sum()`, which has less overhead.
+- CuPy refuses cuBLAS calls (any `matmul`) during CUDA-graph stream capture,
+  so only matmul-free bodies (the Fast & Furious step) are replayed from
+  graphs; capture under a private memory pool and warm FFT plans first.
+- CPU micro-optimizations of elementwise code on MB-sized temporaries are
+  dominated by allocation and page-fault patterns; a rewrite 5x faster in
+  isolation made `jvp` slower in context. Measure inside the solver.
+- CI has no GPU and gates coverage at 85%: mark GPU-only blocks
+  `# pragma: no cover - GPU only` and test them with `--run-gpu`
+  (`tests/test_kernels.py` compares them with the plain expressions).
+- `AOCORE_FFT_WORKERS` fixes the FFT thread count for every transform,
+  including tiny ones the default heuristic would run on one thread.
 - Real data (validation/nirc2.py): the Keck daytime bench pupil is a full
   circle; a segmented Keck pupil predicts six-fold spikes the images don't
   have. Crop each defocused frame around its own centroid (the image walks

@@ -26,8 +26,9 @@ from typing import Any
 
 import numpy as np
 
+from .. import _kernels
 from ..basis import Basis
-from ..focal import FocalPlaneModel
+from ..focal import FocalPlaneModel, _unit_phasor
 from ..propagation import FFTPropagator, FocalPlanePropagator, Propagator
 from ..result import Result
 from ..retrieval import FocalPlaneProblem
@@ -192,6 +193,11 @@ def gerchberg_saxton(
     else:
         theta = be.asarray(start, dtype="real") * (2 * math.pi / model.wavelength)
     ys, xs = plan.slices
+    # Loop invariants, computed once rather than every iteration.
+    undiv = xp.exp(-1j * div)
+    sig_floor = xp.maximum(sig_energy, 1e-300)
+    fused = be.is_gpu and theta.dtype == be.real_dtype
+    unit = be.real_dtype.type(1.0)
     prev_proj = None
     history: list[float] = []
     times: list[float] = []
@@ -199,24 +205,37 @@ def gerchberg_saxton(
     message, converged = "iteration limit reached", False
     it = 0
     for it in range(1, iterations + 1):
-        u = amp * xp.exp(1j * (theta[None] + div))
-        u = u.astype(be.complex_dtype, copy=False)
-        e = plan.forward(u)
-        win = e[:, ys, xs]
-        mag = xp.abs(win)
-        # Match the data's energy to the model's in the measured window.
-        model_energy = xp.sum((mag * mag) * measured, axis=(1, 2))
-        scale = xp.sqrt(model_energy / xp.maximum(sig_energy, 1e-300))
-        target = sqrt_signal * scale[:, None, None]
-        new_win = xp.where(measured, target * win / xp.maximum(mag, 1e-30), win)
+        if fused:  # pragma: no cover - GPU only
+            # One kernel each for the pupil field, the window energy and the projection.
+            _, u = _kernels.pupil_field(theta[None], div, unit, amp, be.complex_dtype)
+            e = plan.forward(u)
+            win = e[:, ys, xs]
+            power = xp.empty(win.shape, dtype=be.real_dtype)
+            _kernels.call("gs_power", win, measured, power)
+            model_energy = xp.sum(power, axis=(1, 2))
+            scale = xp.sqrt(model_energy / sig_floor)
+            new_win = _kernels.call("gs_modulus", measured, sqrt_signal, scale[:, None, None], win)
+        else:
+            u = amp * _unit_phasor(be, theta[None] + div)
+            e = plan.forward(u)
+            win = e[:, ys, xs]
+            mag = xp.abs(win)
+            # Match the data's energy to the model's in the measured window.
+            model_energy = xp.sum((mag * mag) * measured, axis=(1, 2))
+            scale = xp.sqrt(model_energy / sig_floor)
+            target = sqrt_signal * scale[:, None, None]
+            new_win = xp.where(measured, target * win / xp.maximum(mag, 1e-30), win)
         check = it % check_every == 0 or it == iterations
         if check:
+            if fused:  # pragma: no cover - GPU only
+                mag = xp.abs(win)
+                target = sqrt_signal * scale[:, None, None]
             resid = xp.sum(((mag - target) ** 2) * measured)
             err = float(resid / xp.maximum(xp.sum(model_energy), 1e-300))
             history.append(err)
             times.append(time.perf_counter() - t0)
         e[:, ys, xs] = new_win
-        back = plan.adjoint(e) * xp.exp(-1j * div)
+        back = plan.adjoint(e) * undiv
         proj = xp.angle(xp.sum(back, axis=0))
         if momentum and prev_proj is not None:
             step = xp.angle(xp.exp(1j * (proj - prev_proj)))

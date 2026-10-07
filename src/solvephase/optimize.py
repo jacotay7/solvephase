@@ -23,6 +23,7 @@ from typing import Any
 
 import numpy as np
 
+from . import _kernels
 from .backend import Backend
 
 __all__ = ["OptimizeResult", "adam", "lbfgs", "levenberg_marquardt"]
@@ -67,7 +68,14 @@ class OptimizeResult:
 
 
 def _dot(backend: Backend, a: Any, b: Any) -> float:
-    return backend.dot(a, b)
+    return _kernels.dot(backend, a, b)
+
+
+def _axpy(backend: Backend, x: Any, alpha: float, y: Any) -> Any:
+    """``x + alpha * y`` (one fused kernel on the GPU, same rounding)."""
+    if backend.is_gpu and x.dtype == y.dtype and x.dtype.kind == "f":  # pragma: no cover - GPU only
+        return _kernels.call("axpy", x, alpha, y)
+    return x + alpha * y
 
 
 def _cubic_min(x1: float, f1: float, g1: float, x2: float, f2: float, g2: float) -> float:
@@ -102,7 +110,7 @@ def _strong_wolfe(
     """Strong-Wolfe line search. Returns ``(step, f, g, n_evals)``."""
     n_eval = 0
     f_prev, g_prev, gtd_prev, t_prev = f0, g0, gtd0, 0.0
-    f_new, g_new = fun(x + step * d)
+    f_new, g_new = fun(_axpy(backend, x, step, d))
     n_eval += 1
     gtd_new = _dot(backend, g_new, d)
     bracket: list[tuple[float, float, Any, float]] | None = None
@@ -123,7 +131,7 @@ def _strong_wolfe(
         t_next = min(max(t_next, step * 1.1), step * 10.0) if math.isfinite(f_new) else step * 0.5
         t_prev, f_prev, g_prev, gtd_prev = step, f_new, g_new, gtd_new
         step = t_next
-        f_new, g_new = fun(x + step * d)
+        f_new, g_new = fun(_axpy(backend, x, step, d))
         n_eval += 1
         gtd_new = _dot(backend, g_new, d)
     if bracket is None:
@@ -133,8 +141,9 @@ def _strong_wolfe(
     lo, hi = bracket
     if lo[1] > hi[1] or not math.isfinite(lo[1]):
         lo, hi = hi, lo
+    d_norm = max(1.0, float(np.sqrt(abs(_dot(backend, d, d)))))  # d is fixed: one dot
     while n_eval < max_eval:
-        if abs(hi[0] - lo[0]) * max(1.0, float(np.sqrt(abs(_dot(backend, d, d))))) < 1e-12:
+        if abs(hi[0] - lo[0]) * d_norm < 1e-12:
             break
         if math.isfinite(hi[1]):
             t = _cubic_min(lo[0], lo[1], lo[3], hi[0], hi[1], hi[3])
@@ -144,7 +153,7 @@ def _strong_wolfe(
         a, b = min(lo[0], hi[0]), max(lo[0], hi[0])
         if min(t - a, b - t) < 0.1 * width:  # keep away from the ends
             t = 0.5 * (a + b)
-        f_t, g_t = fun(x + t * d)
+        f_t, g_t = fun(_axpy(backend, x, t, d))
         n_eval += 1
         gtd_t = _dot(backend, g_t, d)
         if not math.isfinite(f_t) or f_t > f0 + c1 * t * gtd0 or f_t >= lo[1]:
@@ -204,6 +213,7 @@ def lbfgs(
     s_hist: list[Any] = []
     y_hist: list[Any] = []
     rho_hist: list[float] = []
+    sy_yy: tuple[float, float] = (1.0, 1.0)  # s.y and y.y of the newest pair
     max_eval = max_eval or 10 * max_iter
     message, converged = "iteration limit reached", False
     it = 0
@@ -214,13 +224,14 @@ def lbfgs(
         for s, y, rho in zip(reversed(s_hist), reversed(y_hist), reversed(rho_hist)):
             a = rho * _dot(backend, s, q)
             alphas.append(a)
-            q = q - a * y
+            q = _axpy(backend, q, -a, y)
         if s_hist:
-            gamma = _dot(backend, s_hist[-1], y_hist[-1]) / _dot(backend, y_hist[-1], y_hist[-1])
+            # s.y and y.y of the newest pair were computed when it was stored.
+            gamma = sy_yy[0] / sy_yy[1]
             q = q * gamma
         for (s, y, rho), a in zip(zip(s_hist, y_hist, rho_hist), reversed(alphas)):
             b = rho * _dot(backend, y, q)
-            q = q + (a - b) * s
+            q = _axpy(backend, q, a - b, s)
         d = q
         gtd = _dot(backend, g, d)
         if gtd > -1e-30:
@@ -241,10 +252,12 @@ def lbfgs(
         x = x + s
         y = g_new - g
         sy = _dot(backend, s, y)
-        if sy > 1e-12 * math.sqrt(_dot(backend, s, s) * _dot(backend, y, y)):
+        yy = _dot(backend, y, y)
+        if sy > 1e-12 * math.sqrt(_dot(backend, s, s) * yy):
             s_hist.append(s)
             y_hist.append(y)
             rho_hist.append(1.0 / sy)
+            sy_yy = (sy, yy)
             if len(s_hist) > memory:
                 s_hist.pop(0), y_hist.pop(0), rho_hist.pop(0)
         f_old, f, g = f, f_new, g_new

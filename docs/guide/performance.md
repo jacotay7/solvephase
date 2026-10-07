@@ -26,9 +26,12 @@ for large problems:
   run near peak.
 - **CDI**: from about 256×256, and especially with batched multi-start
   (`starts=16`), where one batched FFT advances every start.
-- **Small sensors** (LIFT on 32×32, Fast & Furious on 64×64) are latency
-  bound. The CPU is as fast or faster unless the data already live on the
-  GPU.
+- **Small solves** (LIFT on 32×32, Levenberg-Marquardt on 64×64) are
+  latency bound: they take tens of milliseconds on any GPU, and the CPU is as
+  fast or faster unless the data already live on the GPU.
+- **Fast & Furious** replays each step from a CUDA graph, so a 64×64 or
+  128×128 step takes about 0.1 ms on the GPU, several times faster than on
+  the CPU.
 
 The [Benchmarks](../benchmarks.md) page has the measured crossover on
 reference hardware; run `python benchmarks/run.py` to measure yours.
@@ -52,6 +55,11 @@ reference hardware; run `python benchmarks/run.py` to measure yours.
   which stall when the cores are busy.
 - **Few host synchronizations.** Iterative projection algorithms check
   convergence only every `check_every` iterations.
+- **Few kernel launches.** On small GPU problems the time goes to launching
+  kernels, not to the arithmetic. The model, its derivatives, the losses and
+  the Gerchberg-Saxton and Fast & Furious updates run as fused kernels that
+  compute exactly what the array expressions compute, and Fast & Furious
+  steps replay a captured CUDA graph.
 
 ## Tips
 

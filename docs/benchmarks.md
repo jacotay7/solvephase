@@ -320,13 +320,51 @@ Hardware: Ampere Neoverse-N1 (aarch64), 16 of 80 cores pinned with 16 threads; N
 
 
 
+## Small-problem speed-ups in 0.2.0
+
+solvephase 0.2.0 cuts the host-side overhead that bounds small GPU problems
+(fused kernels, CUDA-graph replay of Fast & Furious steps, fewer scalar
+products and transfers in L-BFGS and Levenberg-Marquardt) and some CPU
+elementwise work. Results are bitwise identical to 0.1.0 on this machine.
+Measured on the Arm workstation above: 0.1.0 and 0.2.0 run alternately,
+three times each on the same 12 pinned cores (12 BLAS/FFT threads) and the
+same RTX 4060, on a shared host; medians.
+
+**RTX 4060 (single precision)**
+
+| case | 0.1.0 | 0.2.0 | speed-up |
+|---|---|---|---|
+| Fast & Furious step, 64² | 1.41 ms | 0.11 ms | 12.4x |
+| Fast & Furious step, 128² | 1.44 ms | 0.13 ms | 10.7x |
+| Fast & Furious step, 256² | 1.55 ms | 0.27 ms | 5.8x |
+| Objective + gradient, 128² (1 / 5 wavelengths) | 2.3 / 2.6 ms | 1.3 / 1.8 ms | 1.8x / 1.5x |
+| Focal LM 64² / 128² / 256², 36 modes | 69 / 65 / 225 ms | 42 / 41 / 164 ms | 1.7x / 1.6x / 1.4x |
+| LIFT estimate, 32² / 128² | 76 / 72 ms | 42 / 41 ms | 1.8x / 1.8x |
+| Phase diversity solve, 64² / 128² | 0.40 / 0.52 s | 0.27 / 0.38 s | 1.5x / 1.4x |
+| Coded diffraction, L-BFGS, 64² | 0.24 s | 0.19 s | 1.3x |
+| Misell/GS, 128² (it/s) | 1,051 | 1,232 | 1.2x |
+| `retrieve()`, 64² / 128² | 0.53 / 0.68 s | 0.45 / 0.57 s | 1.2x / 1.2x |
+
+**Neoverse-N1, 12 cores (double precision)**
+
+| case | 0.1.0 | 0.2.0 | speed-up |
+|---|---|---|---|
+| Misell/GS, 128² / 256² / 512² (it/s) | 128 / 33 / 7.1 | 151 / 40 / 8.8 | 1.2x |
+| Objective + gradient, 256² | 18.7 ms | 16.7 ms | 1.1x |
+| Focal LM 128² / 256², 36 modes | 0.69 / 2.10 s | 0.65 / 1.89 s | 1.1x |
+| `retrieve()`, 64² | 1.09 s | 1.01 s | 1.1x |
+
+Other CPU cases are unchanged within the noise of the shared host: CPU
+focal-plane solves spend most of their time in the FFTs.
+
 ## Reading the numbers
 
 - Levenberg-Marquardt needs about 5–10 iterations, so focal-plane time to
   solution is dominated by building Gauss-Newton Jacobians (one
   forward-mode propagation per mode and channel).
-- GPU speed-ups grow with problem size. Small sensors (≤ 64×64) are bound
-  by kernel-launch latency, and the CPU is as fast. See
+- GPU speed-ups grow with problem size. Small solves (≤ 64×64) are bound
+  by kernel-launch latency, and the CPU is as fast; Fast & Furious, which
+  replays its steps from CUDA graphs, is the exception. See
   [GPU and performance](guide/performance.md).
 - Batched multi-start CDI advances all starts with one batched FFT, so the
   throughput per start rises with the batch size.

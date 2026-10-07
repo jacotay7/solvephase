@@ -9,12 +9,13 @@ microseconds. Each kernel here replaces a chain of 3-20 CuPy operations
 The kernels evaluate the same expressions as the NumPy code paths they
 replace, in the same order and precision, and are compiled with
 ``--fmad=false`` so that no multiply-add is contracted. They differ from the
-unfused CuPy chain at most by rounding in the last bit; products of two
-complex arrays are compiled like CuPy's own multiply kernel to round the same
-way.
+unfused CuPy chain at most by rounding in the last bit; kernels with products
+of two complex arrays are compiled like CuPy's own multiply kernel to round
+the same way. On CuPy 14 / CUDA 12 every kernel reproduces the unfused chain
+bit for bit.
 
-Every function returns ``None`` (or is not called) on the CPU; callers keep
-their NumPy path there.
+The kernels need CuPy: callers use them on the GPU only and keep their NumPy
+path on the CPU (:func:`dot` handles both).
 """
 
 from __future__ import annotations
@@ -45,36 +46,31 @@ def _elementwise(name: str) -> Any:
     import cupy
 
     in_params, out_params, body = _ELEMENTWISE[name]
-    # Products of two complex arrays are written as thrust complex products and
-    # compiled like CuPy's own multiply kernel (multiply-adds contracted), so
-    # they round exactly as the unfused CuPy expression does.
-    options = () if name in _COMPLEX_PRODUCTS else _OPTIONS
+    # Products of two complex arrays (and complex abs) are written with thrust
+    # complex operations and compiled with CuPy's default flags, like CuPy's own
+    # multiply and abs kernels, so they round exactly as the unfused expression.
+    options = () if name in _CUPY_FLAGS else _OPTIONS
     return cupy.ElementwiseKernel(
         in_params, out_params, body, f"solvephase_{name}", preamble=_PREAMBLE, options=options
     )
 
 
 @functools.cache
-def _reduction(name: str, real: str) -> Any:
+def _loss_floor_kernel() -> Any:
     import cupy
 
-    # ``{R}`` (``{RC}`` in C code) is the real working type, for outputs no input
-    # type determines.
-    c_name = {"float32": "float", "float64": "double"}[real]
-    in_params, out_params, mapped, reduced, post, identity = (
-        part.replace("{RC}", c_name).replace("{R}", real) for part in _REDUCTION[name]
-    )
-    options = () if name in _COMPLEX_PRODUCTS else _OPTIONS
+    # A maximum does not depend on the reduction order, so this matches
+    # ``1e-6 * max(abs(maximum(data + shift, 0))) + 1e-30`` (losses._floor) exactly.
     return cupy.ReductionKernel(
-        in_params,
-        out_params,
-        mapped,
-        reduced,
-        post,
-        identity,
-        f"solvephase_{name}",
+        "float64 data, float64 shift",
+        "float64 out",
+        "abs(sp_max(data + shift, 0.0))",
+        "sp_max(a, b)",
+        "out = 1e-6 * a + 1e-30",
+        "0",
+        "solvephase_loss_floor",
         preamble=_PREAMBLE,
-        options=options,
+        options=_OPTIONS,
     )
 
 
@@ -230,21 +226,9 @@ _ELEMENTWISE: dict[str, tuple[str, str, str]] = {
     ),
 }
 
-_COMPLEX_PRODUCTS = frozenset(
+_CUPY_FLAGS = frozenset(
     {"cross_imag", "cross_real", "gs_modulus", "gs_power", "pd_resid", "pd_grad"}
 )
-
-_REDUCTION: dict[str, tuple[str, str, str, str, str, str]] = {
-    # Loss floor 1e-6 max|max(d + shift, 0)| + 1e-30 (``losses._floor``).
-    "floor": (
-        "float64 data, float64 shift",
-        "float64 out",
-        "abs(sp_max(data + shift, 0.0))",
-        "sp_max(a, b)",
-        "out = 1e-6 * a + 1e-30",
-        "0",
-    ),
-}
 
 
 def pupil_field(phase: Any, div: Any, ratio: Any, amp: Any, cdtype: Any) -> tuple[Any, Any]:
@@ -282,15 +266,7 @@ def call(name: str, *args: Any) -> Any:
 
 def loss_floor(data: Any, shift: float) -> Any:
     """0-d device array ``1e-6 max|max(data + shift, 0)| + 1e-30`` in one launch."""
-    return reduce("floor", data, np.float64(shift))
-
-
-def reduce(name: str, *args: Any, real: Any = np.float64, **kwargs: Any) -> Any:
-    """Run the fused reduction kernel ``name`` (``axis=`` etc. as for CuPy).
-
-    ``real`` is the real working dtype for kernels whose output type no input fixes.
-    """
-    return _reduction(name, np.dtype(real).name)(*args, **kwargs)
+    return _loss_floor_kernel()(data, np.float64(shift))
 
 
 def dot(backend: Any, a: Any, b: Any) -> float:

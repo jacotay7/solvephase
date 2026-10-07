@@ -5,6 +5,15 @@ All notable changes to `solvephase` are documented here. The project follows
 
 ## [Unreleased]
 
+### Fixed
+
+- **The CDI CPU/GPU parity test failed on aarch64.** After 50 iterations it
+  compared the objects to `atol=1e-9`, but RAAR and DM are chaotic and amplify
+  the FFT libraries' last-bit differences (about 1e5x between iterations 10
+  and 40 on an Arm Neoverse-N1 with an RTX 4060). The test now compares the
+  objects after a short run (`atol=1e-10`) and the error histories after the
+  long one (`rtol=1e-6`). The implementations already agreed.
+
 ### Added
 
 - **Validation on real Keck/NIRC2 data** (`validation/nirc2.py`). Daytime

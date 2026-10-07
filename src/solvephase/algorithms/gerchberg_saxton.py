@@ -205,7 +205,7 @@ def gerchberg_saxton(
     message, converged = "iteration limit reached", False
     it = 0
     for it in range(1, iterations + 1):
-        if fused:
+        if fused:  # pragma: no cover - GPU only
             # One kernel each for the pupil field, the window energy and the projection.
             _, u = _kernels.pupil_field(theta[None], div, unit, amp, be.complex_dtype)
             e = plan.forward(u)
@@ -227,7 +227,7 @@ def gerchberg_saxton(
             new_win = xp.where(measured, target * win / xp.maximum(mag, 1e-30), win)
         check = it % check_every == 0 or it == iterations
         if check:
-            if fused:
+            if fused:  # pragma: no cover - GPU only
                 mag = xp.abs(win)
                 target = sqrt_signal * scale[:, None, None]
             resid = xp.sum(((mag - target) ** 2) * measured)

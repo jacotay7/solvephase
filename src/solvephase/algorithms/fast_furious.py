@@ -239,7 +239,7 @@ class FastAndFurious:
             p = p[0]
         if tuple(p.shape) != self.image_shape:
             raise ValueError(f"image shape {tuple(p.shape)} does not match {self.image_shape}")
-        if self._fused(p):
+        if self._fused(p):  # pragma: no cover - GPU only
             return self._normalize_fused(p)
         total = xp.sum(p)
         p = p * (self._sum_a2 / xp.where(total > 0, total, 1.0))
@@ -247,7 +247,7 @@ class FastAndFurious:
             p = p + (1.0 - xp.max(p) / self._max_a2) * self._a2
         return p
 
-    def _normalize_fused(self, p: Any) -> Any:
+    def _normalize_fused(self, p: Any) -> Any:  # pragma: no cover - GPU only
         """:meth:`_normalize` of a device image in one kernel after two reductions.
 
         ``max(c p) == c max(p)`` exactly for ``c > 0`` (rounding is monotonic),
@@ -296,12 +296,12 @@ class FastAndFurious:
         :attr:`last_odd_opd` and :attr:`last_even_opd`.
         """
         xp = self.backend.xp
-        if self.backend.is_gpu and self._use_graphs:
+        if self.backend.is_gpu and self._use_graphs:  # pragma: no cover - GPU only
             opd = self._step_graph(image, dm_change_opd)
             if opd is not None:
                 return opd
         p = self._normalize(image)
-        if self._fused(p):
+        if self._fused(p):  # pragma: no cover - GPU only
             return self._step_fused(p, dm_change_opd)
         p_flip = p[::-1, ::-1]
         p_even = 0.5 * (p + p_flip)
@@ -338,7 +338,7 @@ class FastAndFurious:
             )
         # Previous frame relative to this one: phi_d = -k * change.
         be = self.backend
-        if be.is_gpu and change.flags.c_contiguous:
+        if be.is_gpu and change.flags.c_contiguous:  # pragma: no cover - GPU only
             field = be.empty(self.pupil.shape, dtype="complex")
             _kernels.call("ff_change", self._amp, be.real_dtype.type(-self._k), change, field)
         else:
@@ -351,7 +351,9 @@ class FastAndFurious:
             return "first"
         return "still" if dm_change_opd is None else "change"
 
-    def _device_step(self, p: Any, prev: Any, change: Any, out: Any, variant: str) -> Any:
+    def _device_step(  # pragma: no cover - GPU only
+        self, p: Any, prev: Any, change: Any, out: Any, variant: str
+    ) -> Any:
         """Fused GPU step from a normalized image ``p``; writes ``out = (opd, odd, even)``.
 
         Five fused kernels plus the FFTs, with the arithmetic of the NumPy path.
@@ -374,7 +376,7 @@ class FastAndFurious:
         _kernels.call("ff_opd", a_phi, self._inv_amp, out[0], out[1], out[2])
         return p_even
 
-    def _step_fused(self, p: Any, dm_change_opd: Any) -> Any:
+    def _step_fused(self, p: Any, dm_change_opd: Any) -> Any:  # pragma: no cover - GPU only
         """:meth:`step` on the GPU with fused kernels (same arithmetic as the NumPy path)."""
         out = self.backend.empty((3, *self.pupil.shape))
         variant = self._variant(dm_change_opd)
@@ -383,7 +385,7 @@ class FastAndFurious:
         self.last_odd_opd, self.last_even_opd = out[1], out[2]
         return out[0]
 
-    def _step_graph(self, image: Any, dm_change_opd: Any) -> Any:
+    def _step_graph(self, image: Any, dm_change_opd: Any) -> Any:  # pragma: no cover - GPU only
         """:meth:`step` replayed from a CUDA graph, or ``None`` when one does not apply."""
         if self._graphs is None:
             self._graphs = _StepGraphs(self)
@@ -397,7 +399,7 @@ class FastAndFurious:
         return out[0]
 
 
-class _StepGraphs:
+class _StepGraphs:  # pragma: no cover - GPU only
     """Fast & Furious steps replayed from captured CUDA graphs.
 
     A GPU step is a dozen small kernels and two FFTs; on a small image the

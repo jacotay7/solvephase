@@ -232,6 +232,9 @@ note the GPU and CuPy version when you report GPU results.
 - CPU micro-optimizations of elementwise code on MB-sized temporaries are
   dominated by allocation and page-fault patterns; a rewrite 5x faster in
   isolation made `jvp` slower in context. Measure inside the solver.
+- CI has no GPU and gates coverage at 85%: mark GPU-only blocks
+  `# pragma: no cover - GPU only` and test them with `--run-gpu`
+  (`tests/test_kernels.py` compares them with the plain expressions).
 - `AOCORE_FFT_WORKERS` fixes the FFT thread count for every transform,
   including tiny ones the default heuristic would run on one thread.
 - Real data (validation/nirc2.py): the Keck daytime bench pupil is a full

@@ -59,7 +59,7 @@ def _unit_phasor(backend: Backend, phi: Any) -> Any:
     about 1.4x faster than NumPy's complex ``exp``.
     """
     xp = backend.xp
-    if backend.is_gpu:
+    if backend.is_gpu:  # pragma: no cover - GPU only
         return xp.exp(1j * phi).astype(backend.complex_dtype, copy=False)
     out = xp.empty(phi.shape, dtype=backend.complex_dtype)
     xp.cos(phi, out=out.real)
@@ -315,7 +315,7 @@ class FocalPlaneModel:
         be = self.backend
         xp = be.xp
         amp = self._amp if amplitude is None else amplitude
-        if be.is_gpu and phase.dtype == amp.dtype == be.real_dtype:
+        if be.is_gpu and phase.dtype == amp.dtype == be.real_dtype:  # pragma: no cover - GPU only
             # One fused kernel for phase, exp(i phi) and amp * exp(i phi).
             ph = phase[None] if phase.ndim == 2 else phase
             phasor, u = _kernels.pupil_field(
@@ -369,9 +369,9 @@ class FocalPlaneModel:
             ``(K, ny, nx)`` per-channel phase gradient (sum over channels for
             a shared phase), and ``(ny, nx)`` amplitude gradient or ``None``.
         """
-        xp = self.backend.xp
+        be, xp = self.backend, self.backend.xp
         g = self._unbin(grad_images)[:, None, :, :]
-        if self.backend.is_gpu and g.dtype == self.backend.real_dtype:
+        if be.is_gpu and g.dtype == be.real_dtype:  # pragma: no cover - GPU only
             v = self.propagator.adjoint(
                 _kernels.call("scale_field", g, state.focal_field, self._wl_grad)
             )
@@ -408,7 +408,7 @@ class FocalPlaneModel:
         xp = be.xp
         d = directions[:, None] if not per_channel else directions
         scale = 2.0 / self._norm
-        if be.is_gpu and d.dtype == be.real_dtype:
+        if be.is_gpu and d.dtype == be.real_dtype:  # pragma: no cover - GPU only
             du = _kernels.call("direction_field", d[:, :, None], self._ratio, state.pupil_field)
             de = self.propagator.forward(du)
             if self.n_wavelengths == 1:

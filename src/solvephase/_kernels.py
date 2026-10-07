@@ -42,7 +42,7 @@ __device__ __forceinline__ double sp_sub(double a, double b) { return __dsub_rn(
 
 
 @functools.cache
-def _elementwise(name: str) -> Any:
+def _elementwise(name: str) -> Any:  # pragma: no cover - GPU only
     import cupy
 
     in_params, out_params, body = _ELEMENTWISE[name]
@@ -56,7 +56,7 @@ def _elementwise(name: str) -> Any:
 
 
 @functools.cache
-def _loss_floor_kernel() -> Any:
+def _loss_floor_kernel() -> Any:  # pragma: no cover - GPU only
     import cupy
 
     # A maximum does not depend on the reduction order, so this matches
@@ -245,7 +245,7 @@ def pupil_field(phase: Any, div: Any, ratio: Any, amp: Any, cdtype: Any) -> tupl
     return phasor, u
 
 
-def abs2(a: Any) -> Any:
+def abs2(a: Any) -> Any:  # pragma: no cover - GPU only
     """``a.real**2 + a.imag**2`` of a complex array in one launch."""
     import cupy
 
@@ -254,7 +254,7 @@ def abs2(a: Any) -> Any:
     return out
 
 
-def call(name: str, *args: Any) -> Any:
+def call(name: str, *args: Any) -> Any:  # pragma: no cover - GPU only
     """Run the fused elementwise kernel ``name``.
 
     Outputs are allocated by CuPy (broadcast shape) unless they are passed as
@@ -276,6 +276,6 @@ def dot(backend: Any, a: Any, b: Any) -> float:
     rounds exactly as ``cupy.vdot`` does (checked on random vectors of both
     precisions) with about 30 us less host overhead per call.
     """
-    if backend.is_gpu and a.dtype.kind == b.dtype.kind == "f":
+    if backend.is_gpu and a.dtype.kind == b.dtype.kind == "f":  # pragma: no cover - GPU only
         return float((a.reshape(-1) * b.reshape(-1)).sum())
     return float(backend.dot(a, b))

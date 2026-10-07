@@ -87,6 +87,11 @@ class GaussianLoss(Loss):
     ) -> tuple[Any, Any, Any] | None:
         if not _fusable(self, GaussianLoss, backend, model, data, weights):
             return None
+        return self._fused_call(backend, model, data, weights, grad_dtype)
+
+    def _fused_call(  # pragma: no cover - GPU only
+        self, backend: Backend, model: Any, data: Any, weights: Any, grad_dtype: Any
+    ) -> tuple[Any, Any, Any]:
         xp = backend.xp
         term = xp.empty(model.shape, dtype=np.float64)
         grad = xp.empty(model.shape, dtype=grad_dtype)
@@ -162,6 +167,11 @@ class PoissonLoss(Loss):
     ) -> tuple[Any, Any, Any] | None:
         if not _fusable(self, PoissonLoss, backend, model, data, weights):
             return None
+        return self._fused_call(backend, model, data, weights, grad_dtype)
+
+    def _fused_call(  # pragma: no cover - GPU only
+        self, backend: Backend, model: Any, data: Any, weights: Any, grad_dtype: Any
+    ) -> tuple[Any, Any, Any]:
         xp = backend.xp
         shift = self.read_noise**2
         m0 = _kernels.loss_floor(data, shift) if self.floor is None else self.floor
@@ -218,6 +228,11 @@ class AmplitudeLoss(Loss):
     ) -> tuple[Any, Any, Any] | None:
         if not _fusable(self, AmplitudeLoss, backend, model, data, weights):
             return None
+        return self._fused_call(backend, model, data, weights, grad_dtype)
+
+    def _fused_call(  # pragma: no cover - GPU only
+        self, backend: Backend, model: Any, data: Any, weights: Any, grad_dtype: Any
+    ) -> tuple[Any, Any, Any]:
         xp = backend.xp
         m0 = _kernels.loss_floor(data, 0.0) if self.floor is None else self.floor
         term = xp.empty(model.shape, dtype=np.float64)

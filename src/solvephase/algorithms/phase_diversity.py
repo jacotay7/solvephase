@@ -425,7 +425,7 @@ class PhaseDiversityProblem:
         be, xp = self.backend, self.backend.xp
         state = self.model.forward(self._channel_phase(x), self._amplitude(x))
         otf = be.rfft2(state.images)
-        if be.is_gpu:
+        if be.is_gpu:  # pragma: no cover - GPU only
             # Fused kernels for the elementwise parts; the sums over channels stay CuPy's.
             num = xp.sum(self._dhat * xp.conj(otf), axis=0)
             den = xp.sum(_kernels.abs2(otf), axis=0) + self.regularization
@@ -440,7 +440,7 @@ class PhaseDiversityProblem:
 
     def _metric(self, obj: Any, resid: Any) -> float:
         be, xp = self.backend, self.backend.xp
-        if be.is_gpu:
+        if be.is_gpu:  # pragma: no cover - GPU only
             terms = xp.sum(_kernels.abs2(resid), axis=0)
             if self.regularization:
                 rdt = be.real_dtype.type
@@ -469,7 +469,7 @@ class PhaseDiversityProblem:
         # Through the real FFT, dL/dp = N irfft2(-2 m O* R_k), with m the in-band mask.
         my, mx = self._shape
         scale = -2.0 * my * mx / self._norm
-        if be.is_gpu:
+        if be.is_gpu:  # pragma: no cover - GPU only
             rdt = be.real_dtype.type
             g_hat = _kernels.call("pd_grad", rdt(scale), self._mask, obj, resid)
         else:

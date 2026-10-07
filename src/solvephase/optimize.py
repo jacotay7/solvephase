@@ -73,7 +73,7 @@ def _dot(backend: Backend, a: Any, b: Any) -> float:
 
 def _axpy(backend: Backend, x: Any, alpha: float, y: Any) -> Any:
     """``x + alpha * y`` (one fused kernel on the GPU, same rounding)."""
-    if backend.is_gpu and x.dtype == y.dtype and x.dtype.kind == "f":
+    if backend.is_gpu and x.dtype == y.dtype and x.dtype.kind == "f":  # pragma: no cover - GPU only
         return _kernels.call("axpy", x, alpha, y)
     return x + alpha * y
 

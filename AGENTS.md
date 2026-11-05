@@ -232,6 +232,14 @@ note the GPU and CuPy version when you report GPU results.
 - CPU micro-optimizations of elementwise code on MB-sized temporaries are
   dominated by allocation and page-fault patterns; a rewrite 5x faster in
   isolation made `jvp` slower in context. Measure inside the solver.
+- Fitted nuisance widths are parametrized in log space; a trial LM step can
+  overflow `exp()`. Clamp to a physical range (the blur width is capped at
+  the image size) so the cost stays finite and the step is rejected, rather
+  than letting the model raise inside the objective.
+- A background ramp across the stamp that the model cannot represent is
+  absorbed into odd aberrations and the flux position, dragging defocus by
+  hundreds of um in focus sensing; fit `fit_background="plane"` whenever
+  stray light may vary across the window. Reduced chi2 exposes it.
 - CI has no GPU and gates coverage at 85%: mark GPU-only blocks
   `# pragma: no cover - GPU only` and test them with `--run-gpu`
   (`tests/test_kernels.py` compares them with the plain expressions).

@@ -16,6 +16,8 @@
 
 ::: solvephase.zernike_diversity
 
+::: solvephase.focal.gaussian_blur_matrix
+
 ## Focal-plane solvers
 
 ::: solvephase.FocalPlaneProblem
@@ -31,6 +33,8 @@
 ::: solvephase.algorithms.phase_diversity
 
 ::: solvephase.algorithms.lift
+
+::: solvephase.algorithms.focus
 
 ::: solvephase.algorithms.fast_furious
 

@@ -6,6 +6,7 @@ The most common entry points:
 * :class:`Pupil`, :class:`Basis`, :class:`FocalPlaneModel` - describe the optics;
 * :class:`FocalPlaneProblem` + :func:`solve` - full control of the
   nonlinear focal-plane solver;
+* :class:`FocusSensor` - focus sensing with a focus mechanism;
 * :func:`phase_diversity`, :func:`lift`, :class:`FastAndFurious`,
   :func:`cdi`, :func:`wirtinger`, :func:`tie`, :func:`gerchberg_saxton` - the algorithm
   families (see :mod:`solvephase.algorithms`).
@@ -21,6 +22,15 @@ from .algorithms.cdi import (
     simulate_cdi,
 )
 from .algorithms.fast_furious import ClosedLoopResult, FastAndFurious, simulate_closed_loop
+from .algorithms.focus import (
+    FocusEstimate,
+    FocusSensor,
+    ResponseCalibration,
+    best_focus,
+    combine_estimates,
+    outlier_mask,
+    twin,
+)
 from .algorithms.gerchberg_saxton import gerchberg_saxton
 from .algorithms.lift import LIFT, lift, lift_crlb
 from .algorithms.phase_diversity import PhaseDiversityProblem, phase_diversity
@@ -64,6 +74,8 @@ __all__ = [
     "FocalPlaneModel",
     "FocalPlaneProblem",
     "FocalPlanePropagator",
+    "FocusEstimate",
+    "FocusSensor",
     "GaussianLoss",
     "GenericResult",
     "LinearOperator",
@@ -74,6 +86,7 @@ __all__ = [
     "PhaseDiversityProblem",
     "PoissonLoss",
     "Pupil",
+    "ResponseCalibration",
     "Result",
     "ShrinkwrapConfig",
     "TIEResult",
@@ -81,13 +94,16 @@ __all__ = [
     "align_object",
     "autocorrelation_support",
     "backend_of",
+    "best_focus",
     "cdi",
+    "combine_estimates",
     "gerchberg_saxton",
     "get_backend",
     "gpu_available",
     "lift",
     "lift_crlb",
     "noise_weights",
+    "outlier_mask",
     "phase_diversity",
     "random_aberration",
     "relative_error",
@@ -102,6 +118,7 @@ __all__ = [
     "strehl_from_rms",
     "tie",
     "to_numpy",
+    "twin",
     "unwrap_phase",
     "wavefront_error",
     "wirtinger",

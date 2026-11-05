@@ -72,7 +72,7 @@ def retrieve(
     loss: str | Loss = "poisson",
     read_noise: float = 0.0,
     weights: Any = None,
-    fit_background: bool = True,
+    fit_background: bool | str = True,
     fit_tilt: bool = False,
     spectral_weights: Sequence[float] | None = None,
     oversample: int = 1,
@@ -120,7 +120,8 @@ def retrieve(
     weights:
         Per-pixel weights; zero masks bad pixels.
     fit_background:
-        Fit a constant background per image.
+        Fit a constant background per image, or ``"plane"`` to also fit a
+        linear ramp.
     fit_tilt:
         Fit a registration tip/tilt per image relative to the first.
     spectral_weights:

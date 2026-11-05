@@ -17,6 +17,15 @@ wavelengths and running on the selected device:
 * :meth:`~FocalPlaneModel.jvp` - image derivatives along given phase
   directions (forward mode), used to build Gauss-Newton Jacobians.
 
+An optional Gaussian ``blur`` models image motion during the exposure
+(pointing jitter) and detector charge diffusion: the intensity on the
+oversampled grid is convolved with a Gaussian before pixel integration. The
+kernel is the band-limited Gaussian (its transfer function is
+``exp(-2 pi^2 sigma^2 f^2)`` inside the sampling band), which is exact for an
+adequately sampled intensity and reduces to the identity at ``sigma = 0``.
+:meth:`~FocalPlaneModel.blur_jvp` gives the image derivatives with respect to
+its widths.
+
 Units: phase maps are radians at the *reference wavelength*
 (:attr:`~FocalPlaneModel.wavelength`); OPD is ``phase * wavelength / 2 pi``.
 Images are normalized so that, for an unbounded detector, each channel sums
@@ -38,7 +47,7 @@ from .basis import Basis
 from .propagation import FocalPlanePropagator, _pair, _shape
 from .pupil import Pupil
 
-__all__ = ["FocalPlaneModel", "ForwardState", "zernike_diversity"]
+__all__ = ["FocalPlaneModel", "ForwardState", "gaussian_blur_matrix", "zernike_diversity"]
 
 
 @dataclass
@@ -50,6 +59,8 @@ class ForwardState:
     focal_field: Any  # (K, L, My, Mx) on the oversampled grid
     amplitude: Any  # (ny, nx)
     phasor: Any  # (K, L, ny, nx) exp(i phase)
+    fine_images: Any = None  # (K, My, Mx) intensity before blur and pixel integration
+    blur: tuple[float, float] = (0.0, 0.0)  # Gaussian sigma (y, x) in detector pixels
 
 
 def _unit_phasor(backend: Backend, phi: Any) -> Any:
@@ -65,6 +76,35 @@ def _unit_phasor(backend: Backend, phi: Any) -> Any:
     xp.cos(phi, out=out.real)
     xp.sin(phi, out=out.imag)
     return out
+
+
+def gaussian_blur_matrix(n: int, sigma: float) -> tuple[np.ndarray, np.ndarray]:
+    """Band-limited Gaussian convolution matrix on ``n`` samples, and its sigma-derivative.
+
+    ``K[i, j] = g(i - j)`` with ``g(d) = integral_{-1/2}^{1/2} exp(-2 pi^2 sigma^2 f^2)
+    cos(2 pi f d) df``: the discrete convolution whose transfer function is a
+    Gaussian of standard deviation ``sigma`` samples, truncated to the sampling
+    band. It is the identity at ``sigma = 0`` and the sampled Gaussian for
+    ``sigma`` above about one sample. Samples outside the window are zero
+    (light blurred across the window edge is lost, as on a detector).
+
+    Returns
+    -------
+    K, dK
+        ``(n, n)`` matrix and its derivative with respect to ``sigma``
+        (per sample), both symmetric.
+    """
+    if not (sigma >= 0 and math.isfinite(sigma)):
+        raise ValueError(f"blur sigma must be finite and non-negative, got {sigma}")
+    nodes, w_leg = np.polynomial.legendre.leggauss(max(64, 2 * n + 32))
+    f = 0.25 * (nodes + 1.0)  # [0, 1/2]; the integrand is even in f
+    wq = 0.5 * w_leg  # 2 (even) * 1/4 (interval map)
+    env = np.exp(-2.0 * math.pi**2 * sigma**2 * f**2)
+    cos = np.cos(2.0 * math.pi * np.outer(np.arange(n), f))  # (n, nodes)
+    g = cos @ (wq * env)
+    dg = cos @ (wq * env * (-4.0 * math.pi**2 * sigma * f**2))
+    d = np.abs(np.arange(n)[:, None] - np.arange(n)[None, :])
+    return g[d], dg[d]
 
 
 def zernike_diversity(
@@ -121,6 +161,11 @@ class FocalPlaneModel:
     oversample:
         Model each detector pixel with ``oversample x oversample`` samples
         and integrate (sum) them, which models the pixel's response.
+    blur:
+        Gaussian blur standard deviation in detector pixels, a scalar or
+        ``(sigma_y, sigma_x)``: pointing jitter during the exposure and
+        detector charge diffusion. Applied to the intensity on the
+        oversampled grid before pixel integration. Default 0 (none).
     offset:
         Detector-window offset in pixels ``(dy, dx)``: pixel ``j`` samples the
         angle ``(j - (m - 1) / 2 + offset) * pixel_scale``, so the optical axis
@@ -145,6 +190,7 @@ class FocalPlaneModel:
         reference_wavelength: float | None = None,
         diversity: Any = None,
         oversample: int = 1,
+        blur: Any = 0.0,
         offset: Any = 0.0,
         method: str = "auto",
         device: BackendLike = "cpu",
@@ -186,6 +232,8 @@ class FocalPlaneModel:
             raise ValueError("oversample must be a positive integer")
         self.oversample = int(oversample)
         self.offset = _pair(offset, "offset")
+        self.blur = self._check_blur(blur)
+        self._blur_cache: dict[tuple[float, float], tuple[Any, Any, Any, Any]] = {}
 
         xp = self.backend.xp
         rdt = self.backend.real_dtype
@@ -263,8 +311,55 @@ class FocalPlaneModel:
             f"FocalPlaneModel(pupil={self.pupil.name!r}, channels={self.n_channels}, "
             f"wavelengths={self.n_wavelengths}, image_shape={self.image_shape}, "
             f"sampling={self.sampling:.3g} px/(lambda/D), oversample={self.oversample}, "
+            f"blur={self.blur}, "
             f"engine={self.propagator.method!r}, backend={self.backend})"
         )
+
+    # ---------------------------------------------------------------- blur
+    @staticmethod
+    def _check_blur(blur: Any) -> tuple[float, float]:
+        sy, sx = _pair(blur, "blur")
+        if not (sy >= 0 and sx >= 0 and math.isfinite(sy) and math.isfinite(sx)):
+            raise ValueError(f"blur must be finite and non-negative (pixels), got {blur!r}")
+        return float(sy), float(sx)
+
+    def _blur_matrices(self, blur: tuple[float, float]) -> tuple[Any, Any, Any, Any]:
+        """Device ``(Ky, Kx, dKy, dKx)`` on the oversampled grid; derivatives per detector pixel."""
+        cached = self._blur_cache.get(blur)
+        if cached is None:
+            os_ = self.oversample
+            my, mx = self.image_shape
+            ky, dky = gaussian_blur_matrix(my * os_, blur[0] * os_)
+            kx, dkx = gaussian_blur_matrix(mx * os_, blur[1] * os_)
+            be = self.backend
+            cached = tuple(be.asarray(m, dtype="real") for m in (ky, kx, dky * os_, dkx * os_))
+            if len(self._blur_cache) > 8:  # a fitted blur changes every evaluation
+                self._blur_cache.clear()
+            self._blur_cache[blur] = cached
+        return cached
+
+    def _blur(self, images: Any, blur: tuple[float, float]) -> Any:
+        """Convolve ``(..., My, Mx)`` fine-grid images with the Gaussian (self-adjoint)."""
+        if blur == (0.0, 0.0):
+            return images
+        ky, kx, _, _ = self._blur_matrices(blur)
+        return ky @ images @ kx  # both symmetric: Kx^T == Kx
+
+    def blur_jvp(self, state: ForwardState) -> Any:
+        """Image derivatives with respect to the blur widths.
+
+        Returns
+        -------
+        ``(2, K, my, mx)`` array: ``d images / d sigma_y`` and ``d images / d sigma_x``
+        (sigma in detector pixels) at ``state``.
+        """
+        if state.fine_images is None:
+            raise ValueError("this ForwardState has no fine_images; recompute it with forward()")
+        ky, kx, dky, dkx = self._blur_matrices(state.blur)
+        fine = state.fine_images
+        dy = self._bin(dky @ fine @ kx)
+        dx = self._bin(ky @ fine @ dkx)
+        return self.backend.xp.stack([dy, dx])
 
     # ------------------------------------------------------------- binning
     def _bin(self, images: Any) -> Any:
@@ -296,7 +391,7 @@ class FocalPlaneModel:
             return values[..., 0, :, :]
         return self.backend.xp.sum(values, axis=-3)
 
-    def forward(self, phase: Any, amplitude: Any = None) -> ForwardState:
+    def forward(self, phase: Any, amplitude: Any = None, *, blur: Any = None) -> ForwardState:
         """Model images for a phase map.
 
         Parameters
@@ -306,6 +401,9 @@ class FocalPlaneModel:
             all channels), or ``(K, ny, nx)`` per channel. Backend array.
         amplitude:
             Optional ``(ny, nx)`` pupil amplitude; defaults to the pupil's.
+        blur:
+            Optional Gaussian blur ``sigma`` (pixels, scalar or ``(y, x)``)
+            replacing the model's :attr:`blur` for this call.
 
         Returns
         -------
@@ -331,8 +429,15 @@ class FocalPlaneModel:
             u = amp * phasor
             e = self.propagator.forward(u)
             inten = self._sum_wavelengths(self._wl * (e.real**2 + e.imag**2)) / self._norm
+        sigma = self.blur if blur is None else self._check_blur(blur)
         return ForwardState(
-            images=self._bin(inten), pupil_field=u, focal_field=e, amplitude=amp, phasor=phasor
+            images=self._bin(self._blur(inten, sigma)),
+            pupil_field=u,
+            focal_field=e,
+            amplitude=amp,
+            phasor=phasor,
+            fine_images=inten,
+            blur=sigma,
         )
 
     def images(self, opd: Any = None, *, amplitude: Any = None) -> Any:
@@ -370,7 +475,7 @@ class FocalPlaneModel:
             a shared phase), and ``(ny, nx)`` amplitude gradient or ``None``.
         """
         be, xp = self.backend, self.backend.xp
-        g = self._unbin(grad_images)[:, None, :, :]
+        g = self._blur(self._unbin(grad_images), state.blur)[:, None, :, :]
         if be.is_gpu and g.dtype == be.real_dtype:  # pragma: no cover - GPU only
             v = self.propagator.adjoint(
                 _kernels.call("scale_field", g, state.focal_field, self._wl_grad)
@@ -416,9 +521,9 @@ class FocalPlaneModel:
             else:
                 cross = _kernels.call("cross_real", state.focal_field, de, self._wl, 1.0)
                 di = xp.sum(cross, axis=-3) * scale
-            return self._bin(di)
+            return self._bin(self._blur(di, state.blur))
         du = (1j * d[:, :, None, :, :] * self._ratio) * state.pupil_field
         de = self.propagator.forward(du.astype(be.complex_dtype, copy=False))
         cross = xp.conj(state.focal_field) * de
         di = self._sum_wavelengths(self._wl * cross.real) * scale
-        return self._bin(di)
+        return self._bin(self._blur(di, state.blur))

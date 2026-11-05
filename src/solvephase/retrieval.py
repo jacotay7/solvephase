@@ -14,8 +14,9 @@ object.
 
 Internal parameters are dimensionless and well scaled: phase coefficients in
 radians at the reference wavelength, log-flux, background in units of the
-data's standard deviation. Results are reported in physical units (metres of
-OPD, data units for flux and background).
+data's standard deviation, log of the blur width, and the diversity scale
+(1 = as given). Results are reported in physical units (metres of OPD, data
+units for flux and background, detector pixels for blur).
 """
 
 from __future__ import annotations
@@ -58,6 +59,9 @@ class _Layout:
     tilts: slice
     log_flux: slice
     background: slice
+    background_slope: slice
+    log_blur: slice
+    diversity_scale: slice
     size: int
 
 
@@ -91,8 +95,11 @@ class FocalPlaneProblem:
         Fixed per-channel flux (scalar or ``(K,)``) when ``fit_flux`` is
         False; by default the data sum.
     fit_background:
-        Fit a constant background per channel. Otherwise ``background`` is
-        used.
+        Fit a constant background per channel (``True`` or ``"constant"``),
+        or a plane (``"plane"``: constant plus a linear ramp in x and y per
+        channel, for stray-light gradients and the wings of nearby sources).
+        Otherwise ``background`` is used. An unmodelled ramp is absorbed into
+        odd aberrations and focus.
     background:
         Fixed per-channel background (data units per pixel). Default 0.
     fit_tilt:
@@ -100,6 +107,23 @@ class FocalPlaneProblem:
         registration); requires at least two channels.
     fit_amplitude:
         Also retrieve the pupil amplitude (zonal, on the pupil support).
+    fit_blur:
+        Fit the width of the model's Gaussian blur (pointing jitter during
+        the exposure, charge diffusion): ``True`` or ``"isotropic"`` for one
+        width shared by both axes, ``"xy"`` for separate ``(sigma_y,
+        sigma_x)``. Shared by all channels. Unmodelled blur is absorbed into
+        the even aberrations (it inflates the estimated defocus); fit it
+        whenever the jitter is not known to a small fraction of a pixel.
+    blur:
+        Starting (or, when not fitted, fixed) blur width in detector pixels,
+        scalar or ``(sigma_y, sigma_x)``. Defaults to the model's blur, or
+        0.3 pixel when fitting a model without blur.
+    fit_diversity_scale:
+        Fit one scale factor ``s`` multiplying every channel's known
+        diversity (``phase_k = phi + s * diversity_k``). Use it to calibrate
+        an actuator that produces the diversity (for example a focus
+        mechanism of uncertain stroke-to-OPD sensitivity); the sign of ``s``
+        and the diversity shape stay as given.
     regularization:
         Tikhonov weight on the phase coefficients (radians^-2).
     prior:
@@ -120,10 +144,13 @@ class FocalPlaneProblem:
         read_noise: float = 0.0,
         fit_flux: bool = True,
         flux: Any = None,
-        fit_background: bool = False,
+        fit_background: bool | str = False,
         background: Any = 0.0,
         fit_tilt: bool = False,
         fit_amplitude: bool = False,
+        fit_blur: bool | str = False,
+        blur: Any = None,
+        fit_diversity_scale: bool = False,
         regularization: float = 0.0,
         prior: bool = False,
         smoothness: float = 0.0,
@@ -170,9 +197,33 @@ class FocalPlaneProblem:
                 "fit_tilt needs at least two channels (tilts are relative to channel 0)"
             )
         self.fit_flux = bool(fit_flux)
+        if fit_background not in (False, None, True, "constant", "plane"):
+            raise ValueError(
+                f"fit_background must be False, True, 'constant' or 'plane', got {fit_background!r}"
+            )
         self.fit_background = bool(fit_background)
+        self.fit_background_slope = fit_background == "plane"
         self.fit_tilt = bool(fit_tilt)
         self.fit_amplitude = bool(fit_amplitude)
+        if fit_blur in (False, None):
+            n_blur = 0
+        elif fit_blur is True or fit_blur == "isotropic":
+            n_blur = 1
+        elif fit_blur == "xy":
+            n_blur = 2
+        else:
+            raise ValueError(f"fit_blur must be False, True, 'isotropic' or 'xy', got {fit_blur!r}")
+        self.fit_blur = n_blur > 0
+        if blur is None:
+            blur = model.blur if (model.blur != (0.0, 0.0) or not n_blur) else 0.3
+        self._blur0 = np.asarray(model._check_blur(blur), dtype=np.float64)
+        if n_blur == 1:
+            self._blur0[:] = float(np.sqrt(np.prod(np.maximum(self._blur0, 1e-3))))
+        if n_blur and np.any(self._blur0 <= 0):
+            raise ValueError("a fitted blur needs a positive starting width (pixels)")
+        if fit_diversity_scale and not np.any(model.diversity_opd):
+            raise ValueError("fit_diversity_scale needs a model with non-zero diversity")
+        self.fit_diversity_scale = bool(fit_diversity_scale)
         self.regularization = float(regularization)
         self.smoothness = float(smoothness)
         if prior and self.basis.variances is None:
@@ -218,6 +269,16 @@ class FocalPlaneProblem:
             else np.broadcast_to(np.asarray(flux, dtype=np.float64), (k,)).copy()
         )
         self._flux0: np.ndarray | None = None
+        my, mx = model.image_shape
+        self._planes = be.asarray(
+            np.stack(
+                [
+                    np.broadcast_to(np.linspace(-1.0, 1.0, my)[:, None], (my, mx)),
+                    np.broadcast_to(np.linspace(-1.0, 1.0, mx)[None, :], (my, mx)),
+                ]
+            ),
+            dtype="real",
+        )  # (2, my, mx): background ramps in y and x, -1..1 across the image
         # Device copies of the small host vectors above, refreshed when their values change.
         self._device_cache: dict[str, tuple[np.ndarray, Any]] = {}
         self._mode_maps: Any = None
@@ -227,7 +288,9 @@ class FocalPlaneProblem:
         n_t = 2 * (k - 1) if self.fit_tilt else 0
         n_f = k if self.fit_flux else 0
         n_b = k if self.fit_background else 0
-        edges = np.cumsum([0, n_c, n_a, n_t, n_f, n_b]).tolist()
+        n_g = 2 * k if self.fit_background_slope else 0
+        n_s = 1 if self.fit_diversity_scale else 0
+        edges = np.cumsum([0, n_c, n_a, n_t, n_f, n_b, n_g, n_blur, n_s]).tolist()
         sl = [slice(a, b) for a, b in itertools.pairwise(edges)]
         self.layout = _Layout(
             coeffs=sl[0],
@@ -235,6 +298,9 @@ class FocalPlaneProblem:
             tilts=sl[2],
             log_flux=sl[3],
             background=sl[4],
+            background_slope=sl[5],
+            log_blur=sl[6],
+            diversity_scale=sl[7],
             size=edges[-1],
         )
 
@@ -277,6 +343,9 @@ class FocalPlaneProblem:
 
     def _channel_phase(self, x: Any) -> Any:
         phase = self._phase_map(x[self.layout.coeffs])
+        if self.fit_diversity_scale:
+            # The model adds diversity_k once; add (s - 1) more of it.
+            phase = phase[None] + (x[self.layout.diversity_scale][0] - 1.0) * self.model._div
         if not self.fit_tilt:
             return phase
         xp = self.backend.xp
@@ -284,7 +353,23 @@ class FocalPlaneProblem:
         zero = xp.zeros((1, 2), dtype=t.dtype)
         t = xp.concatenate([zero, t])
         tilt_maps = xp.tensordot(t, self._ramps, axes=(1, 0))  # (K, ny, nx)
-        return phase[None] + tilt_maps
+        return (phase if phase.ndim == 3 else phase[None]) + tilt_maps
+
+    def _blur_sigma(self, x: Any) -> tuple[float, float] | None:
+        """Blur ``(sigma_y, sigma_x)`` in pixels at ``x`` (``None``: the model's own)."""
+        if not self.fit_blur:
+            return (
+                None if not np.any(self._blur0) else (float(self._blur0[0]), float(self._blur0[1]))
+            )
+        lb = self.backend.to_numpy(x[self.layout.log_blur]).astype(np.float64)
+        lb = lb if lb.size == 2 else np.repeat(lb, 2)
+        # A trial step can push log sigma far enough that exp() overflows and
+        # the model raises. A blur wider than the image is already a flat
+        # image, so cap sigma there: the cost stays finite and the optimizer
+        # rejects the step on its merits.
+        cap = np.log(max(self.model.image_shape) / self._blur0)
+        sigma = self._blur0 * np.exp(np.minimum(np.nan_to_num(lb, nan=0.0), cap))
+        return float(sigma[0]), float(sigma[1])
 
     def _on_device(self, name: str, host: np.ndarray) -> Any:
         """``backend.asarray(host, dtype="real")``, cached while ``host`` keeps its values.
@@ -358,9 +443,19 @@ class FocalPlaneProblem:
                 and len(result.background) == self.n_channels
             ):
                 self._bg0 = np.asarray(be.to_numpy(result.background), dtype=np.float64)
+            slope = getattr(result, "background_slope", None)
+            if self.fit_background_slope and slope is not None and len(slope) == self.n_channels:
+                rel = np.asarray(slope, dtype=np.float64) / self._scale[:, None]
+                x[self.layout.background_slope] = be.asarray(rel.reshape(-1), dtype="real")
             if self.fit_tilt and result.tilts is not None and len(result.tilts) == self.n_channels:
                 t = np.asarray(be.to_numpy(result.tilts))[1:] * k_wave
                 x[self.layout.tilts] = be.asarray(t.reshape(-1), dtype="real")
+            if self.fit_blur and result.blur is not None and np.all(np.asarray(result.blur) > 0):
+                lb = np.log(np.asarray(result.blur, dtype=np.float64) / self._blur0)
+                n_blur = self.layout.log_blur.stop - self.layout.log_blur.start
+                x[self.layout.log_blur] = be.asarray(
+                    lb if n_blur == 2 else [float(np.mean(lb))], dtype="real"
+                )
         elif start is not None:
             arr = np.asarray(be.to_numpy(start), dtype=np.float64)
             if arr.shape == self.model.pupil.shape:
@@ -373,8 +468,15 @@ class FocalPlaneProblem:
                     f"coefficients or a Result; got shape {arr.shape}"
                 )
             x[self.layout.coeffs] = be.asarray(coeffs * k_wave, dtype="real")
+        if self.fit_diversity_scale:
+            scale = 1.0
+            if isinstance(start, Result) and start.diversity_scale is not None:
+                scale = float(start.diversity_scale)
+            x[self.layout.diversity_scale] = scale
         if self._flux0 is None:
-            psf = self.model.forward(self._channel_phase(x), self._amplitude(x)).images
+            psf = self.model.forward(
+                self._channel_phase(x), self._amplitude(x), blur=self._blur_sigma(x)
+            ).images
             self._init_flux(psf)
         return x
 
@@ -403,10 +505,21 @@ class FocalPlaneProblem:
         return value, grad
 
     def _model_images(self, x: Any) -> tuple[Any, Any, Any, Any]:
-        state = self.model.forward(self._channel_phase(x), self._amplitude(x))
+        state = self.model.forward(
+            self._channel_phase(x), self._amplitude(x), blur=self._blur_sigma(x)
+        )
         flux, bg = self._flux_background(x, state.images)
         model = flux[:, None, None] * state.images + bg[:, None, None]
+        if self.fit_background_slope:
+            model = model + self._background_ramp(x)
         return state, flux, bg, model
+
+    def _background_ramp(self, x: Any) -> Any:
+        """Fitted linear background ramp per channel, ``(K, my, mx)``."""
+        xp = self.backend.xp
+        g = x[self.layout.background_slope].reshape(-1, 2)
+        g = g * self._on_device("scale", self._scale)[:, None]
+        return xp.tensordot(g, self._planes, axes=([1], [0]))
 
     def _loss(self, model: Any) -> tuple[Any, Any, Any]:
         """Data term in float64; gradient in working precision."""
@@ -449,6 +562,17 @@ class FocalPlaneProblem:
         if self.fit_background:
             scale = self._on_device("scale", self._scale)
             parts.append(scale * xp.sum(g_model, axis=(1, 2)))
+        if self.fit_background_slope:
+            gs = xp.tensordot(g_model, self._planes, axes=([1, 2], [1, 2]))  # (K, 2)
+            parts.append((gs * scale[:, None]).reshape(-1))
+        if self.fit_blur:
+            d_img = self.model.blur_jvp(state)  # (2, K, my, mx) per pixel of sigma
+            sig = self.backend.asarray(np.asarray(state.blur), dtype="real")
+            g_blur = xp.sum(d_img * g_psf[None], axis=(1, 2, 3)) * sig  # d / d log sigma
+            n_blur = self.layout.log_blur.stop - self.layout.log_blur.start
+            parts.append(g_blur if n_blur == 2 else xp.sum(g_blur, keepdims=True))
+        if self.fit_diversity_scale:
+            parts.append(xp.sum(g_phase * self.model._div).reshape(1))
         grad = xp.concatenate([p.astype(x.dtype, copy=False) for p in parts])
         value = float(val)
         if self._has_reg:
@@ -506,6 +630,24 @@ class FocalPlaneProblem:
             block = xp.zeros((k, k, npix), dtype=be.real_dtype)
             block[diag, diag] = self._on_device("scale", self._scale)[:, None]
             rows.append(block.reshape(k, k * npix))
+        if self.fit_background_slope:
+            block = xp.zeros((k, 2, k, npix), dtype=be.real_dtype)
+            planes = self._planes.reshape(2, npix)
+            scale = self._on_device("scale", self._scale)
+            for c in range(k):
+                block[c, :, c] = scale[c] * planes
+            rows.append(block.reshape(2 * k, k * npix))
+        if self.fit_blur:
+            d_img = self.model.blur_jvp(state) * flux[None, :, None, None]
+            sig = be.asarray(np.asarray(state.blur), dtype="real")
+            d_img = d_img * sig[:, None, None, None]  # d / d log sigma
+            n_blur = self.layout.log_blur.stop - self.layout.log_blur.start
+            if n_blur == 1:
+                d_img = xp.sum(d_img, axis=0, keepdims=True)
+            rows.append(d_img.reshape(n_blur, k * npix).astype(be.real_dtype, copy=False))
+        if self.fit_diversity_scale:
+            d_img = self.model.jvp(state, self.model._div[None], per_channel=True)
+            rows.append((d_img * flux[None, :, None, None]).reshape(1, k * npix))
         # Propagation runs in working precision, but the normal equations are
         # accumulated in float64: near the optimum J^T g is a sum of large,
         # cancelling terms that float32 cannot resolve. Concatenating straight
@@ -580,6 +722,18 @@ class FocalPlaneProblem:
             t[1:] = be.to_numpy(x[self.layout.tilts]).reshape(-1, 2) / k_wave
             tilts = t
         loss_value = opt.fun if opt is not None else self.value(x)
+        sigma = self._blur_sigma(x)
+        if sigma is None:
+            sigma = self.model.blur
+        slope = None
+        if self.fit_background_slope:
+            slope = np.asarray(be.to_numpy(x[self.layout.background_slope]), dtype=np.float64)
+            slope = slope.reshape(-1, 2) * self._scale[:, None]
+        scale = (
+            float(be.to_numpy(x[self.layout.diversity_scale])[0])
+            if self.fit_diversity_scale
+            else None
+        )
         return Result(
             method=method,
             opd=phase / k_wave,
@@ -592,7 +746,10 @@ class FocalPlaneProblem:
             model_images=model,
             flux=np.asarray(be.to_numpy(flux), dtype=np.float64),
             background=np.asarray(be.to_numpy(bg), dtype=np.float64),
+            background_slope=slope,
             tilts=tilts,
+            blur=np.asarray(sigma, dtype=np.float64),
+            diversity_scale=scale,
             loss=float(loss_value),
             history=list(opt.history) if opt else [],
             times=list(opt.times) if opt else [],

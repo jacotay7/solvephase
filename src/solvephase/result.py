@@ -48,9 +48,18 @@ class Result:
     flux, background:
         Per-channel fitted flux (data units, full PSF) and background (data
         units per pixel).
+    background_slope:
+        ``(K, 2)`` fitted background ramp (data units per pixel, change from
+        the image centre to the far edge in y and x) when
+        ``fit_background="plane"``.
     tilts:
         ``(K, 2)`` per-channel (tip, tilt) OPD RMS in metres added to the
         common wavefront (registration), when fitted.
+    blur:
+        ``(sigma_y, sigma_x)`` Gaussian blur of the model in detector pixels
+        (fitted or fixed), for the focal-plane solvers.
+    diversity_scale:
+        Fitted scale of the known diversity (1 = as given), when fitted.
     loss:
         Final objective value.
     history:
@@ -82,7 +91,10 @@ class Result:
     model_images: Any = None
     flux: np.ndarray | None = None
     background: np.ndarray | None = None
+    background_slope: np.ndarray | None = None
     tilts: np.ndarray | None = None
+    blur: np.ndarray | None = None
+    diversity_scale: float | None = None
     loss: float = math.nan
     history: list[float] = field(default_factory=list)
     times: list[float] = field(default_factory=list)
@@ -160,6 +172,8 @@ class Result:
             "device": host.device,
             "history": np.asarray(host.history),
         }
+        if host.diversity_scale is not None:
+            payload["diversity_scale"] = host.diversity_scale
         for name in (
             "opd",
             "phase",
@@ -168,7 +182,9 @@ class Result:
             "model_images",
             "flux",
             "background",
+            "background_slope",
             "tilts",
+            "blur",
         ):
             value = getattr(host, name)
             if value is not None:

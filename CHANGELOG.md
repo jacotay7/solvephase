@@ -5,6 +5,38 @@ All notable changes to `solvephase` are documented here. The project follows
 
 ## [Unreleased]
 
+### Added
+
+- **Detector blur and jitter.** `FocalPlaneModel(..., blur=sigma)` convolves
+  the oversampled intensity with a band-limited Gaussian (pixels, scalar or
+  `(y, x)`) before pixel integration; `FocalPlaneModel.blur_jvp` gives its
+  width derivatives. `FocalPlaneProblem(..., fit_blur=True | "xy")` fits the
+  width (shared by all images), removing the bias unmodelled jitter puts on
+  the even aberrations, notably defocus. The width is in `Result.blur`.
+  A fitted width is capped at the image size, so a runaway optimizer step
+  gives a poor but finite cost instead of an overflow error.
+- **Background gradients.** `FocalPlaneProblem(..., fit_background="plane")`
+  fits a linear ramp in x and y per image as well as the constant
+  (`Result.background_slope`). A ramp left to a constant background is
+  absorbed into the wavefront (stray light, a nearby star's wing); in the
+  focal-plane focusing study a ±50% ramp moved the focus estimate by up to
+  300 µm, and the plane fit removed the error. `FocusSensor` and
+  `solve_focal_plane` pass the option through.
+- **Diversity scale.** `FocalPlaneProblem(..., fit_diversity_scale=True)`
+  fits one factor on every image's known diversity, to calibrate the actuator
+  that makes it (`Result.diversity_scale`).
+- **Focus sensing with a focus mechanism** (`solvephase.algorithms.focus`):
+  `FocusSensor` estimates the wavefront and the minimum-RMS mechanism position,
+  with its Fisher uncertainty, from images at known positions (one image is
+  enough on a pupil without centro-symmetry; the twin solution is checked and
+  its probability reported), with a focus scan that widens the capture range
+  to several waves, a move/no-move rule (`FocusEstimate.should_move`), response
+  calibration from a through-focus series (`FocusSensor.calibrate`) and a
+  multi-star optimum (`combine_estimates`, optionally dropping stars that
+  converged far from the others: `reject=`, `outlier_mask`); `best_focus` and
+  `twin` helpers.
+  Guide page: "Focus sensing with a focus mechanism".
+
 ## [0.2.0] - 2026-10-07
 
 ### Performance

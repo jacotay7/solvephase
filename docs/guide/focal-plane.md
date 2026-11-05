@@ -68,8 +68,46 @@ wrapped phase is unwrapped with weighted least squares
 |---|---|
 | `fit_flux=True` (default) | total flux per image |
 | `fit_background=True` | constant background per image |
+| `fit_background="plane"` | constant plus a linear ramp in x and y per image (stray-light gradients, nearby sources) |
 | `fit_tilt=True` | registration tip/tilt of each image relative to the first |
 | `fit_amplitude=True` | the pupil amplitude itself (zonal), e.g. for apodization or segment reflectivity |
+| `fit_blur=True` (or `"xy"`) | the width of a Gaussian blur shared by all images (jitter, charge diffusion) |
+| `fit_diversity_scale=True` | one scale factor on every image's known diversity |
+
+### Detector blur and jitter
+
+Pointing jitter during an exposure and charge diffusion in the detector blur
+the image. `FocalPlaneModel(..., blur=sigma)` convolves the intensity on the
+oversampled grid with a Gaussian of standard deviation `sigma` detector
+pixels (a scalar or `(sigma_y, sigma_x)`) before pixel integration. The kernel
+is the band-limited Gaussian: exact for an adequately sampled intensity and
+the identity at `sigma = 0`. Unmodelled blur is absorbed into the even
+aberrations and inflates the estimated defocus, so fit it
+(`FocalPlaneProblem(..., fit_blur=True)`) whenever the jitter is not known to
+a small fraction of a pixel. `blur=` sets the starting (or fixed) width; the
+fitted width is in `result.blur`.
+
+```python
+import numpy as np
+import solvephase as sp
+
+pupil = sp.Pupil.circular(48, 1.0, obscuration=0.2)
+div = sp.zernike_diversity(pupil, 4, [0.0, 0.25e-6])
+truth = sp.random_aberration(pupil, 60e-9, n_modes=15, start=4, seed=1)
+jittery = sp.FocalPlaneModel(pupil, 1e-6, 40, sampling=2.0, diversity=div, blur=0.45)
+frames = sp.simulate_images(jittery, truth, photons=1e6, seed=2)
+model = sp.FocalPlaneModel(pupil, 1e-6, 40, sampling=2.0, diversity=div)
+fit = sp.solve(sp.FocalPlaneProblem(model, frames, basis=20, loss="poisson", fit_blur=True))
+print(fit.blur, f"{sp.wavefront_error(fit.opd, truth, pupil, remove='tiptilt') * 1e9:.2f} nm")
+```
+
+### Diversity scale
+
+When the diversity comes from an actuator whose sensitivity is uncertain (a
+focus mechanism, a DM probe), `fit_diversity_scale=True` fits one factor `s`
+on every channel's diversity (`phase_k = phi + s * diversity_k`); the result
+is in `result.diversity_scale`. The shape and sign of the diversity stay as
+given. [Focus sensing](focus.md) uses it to calibrate a focus mechanism.
 
 ## Regularization and priors
 

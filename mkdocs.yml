@@ -39,6 +39,7 @@ nav:
       - Pupils and bases: guide/pupils-and-bases.md
       - Phase diversity (extended objects): guide/phase-diversity.md
       - AO wavefront sensing (LIFT, F&F): guide/ao-wavefront-sensing.md
+      - Focus sensing with a focus mechanism: guide/focus.md
       - Coherent diffraction imaging: guide/cdi.md
       - Generic measurement models: guide/generic.md
       - Transport of intensity: guide/tie.md

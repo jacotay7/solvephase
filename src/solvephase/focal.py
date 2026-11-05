@@ -96,9 +96,9 @@ def gaussian_blur_matrix(n: int, sigma: float) -> tuple[np.ndarray, np.ndarray]:
     """
     if not (sigma >= 0 and math.isfinite(sigma)):
         raise ValueError(f"blur sigma must be finite and non-negative, got {sigma}")
-    nodes, wq = np.polynomial.legendre.leggauss(max(64, 2 * n + 32))
+    nodes, w_leg = np.polynomial.legendre.leggauss(max(64, 2 * n + 32))
     f = 0.25 * (nodes + 1.0)  # [0, 1/2]; the integrand is even in f
-    wq = 0.5 * wq  # 2 (even) * 1/4 (interval map)
+    wq = 0.5 * w_leg  # 2 (even) * 1/4 (interval map)
     env = np.exp(-2.0 * math.pi**2 * sigma**2 * f**2)
     cos = np.cos(2.0 * math.pi * np.outer(np.arange(n), f))  # (n, nodes)
     g = cos @ (wq * env)

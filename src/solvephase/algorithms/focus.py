@@ -559,9 +559,8 @@ def outlier_mask(
     Boolean array, True for the stars to drop.
     """
     pos = np.array([e.position for e in estimates], dtype=np.float64)
-    out = np.zeros(len(pos), dtype=bool)
     if len(pos) < 3:
-        return out
+        return np.zeros(len(pos), dtype=bool)
     med = float(np.median(pos))
     dev = np.abs(pos - med)
     limit = max(float(floor), reject * 1.4826 * float(np.median(dev)))
